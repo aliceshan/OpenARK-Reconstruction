@@ -17,6 +17,11 @@ Software
 - OpenCV 3.0 or above
 - PCL 1.8
 - Boost 1.6.4
+- Pangolin 0.5
+- libfreenect 0.57
+- librealsense 1.12.1
+- Eigen3 3.1
+- CUDA 8.0
 
 ## Platform
 - OS: Ubuntu 16.04.3 LTS
@@ -111,53 +116,9 @@ cd ~/Downloads
 rm libeigen3-dev_3.2.5-4_all.deb VTK-7.1.0.tar.gz pcl-1.8.0.tar.gz
 sudo rm -r VTK-7.1.0 pcl-pcl-1.8.0
 ```
-#### Validation
-```sh
-cd ~
-mkdir pcl-test && cd pcl-test
-```
-Create a CMakeLists.txt file:
-```
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
-project(pcl-test)
-find_package(PCL 1.2 REQUIRED)
-
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
-
-add_executable(pcl-test main.cpp)
-target_link_libraries(pcl-test ${PCL_LIBRARIES})
-
-SET(COMPILE_FLAGS "-std=c++11")
-add_definitions(${COMPILE_FLAGS})
-```
-Create a main.cpp file:
-```cpp
-#include <iostream>
-
-int main() {
-    std::cout << "hello, world!" << std::endl;
-    return (0);
-}
-```
-Compile:
-```sh
-mkdir build && cd build
-cmake ..
-make
-```
-Test:
-```sh
-./pcl-test
-```
-Output ->
-```
-hello, world!
-```
 
 ### Install Pangolin
-1. follow the installation guide here <https://github.com/stevenlovegrove/Pangolin>, need version 0.5
+Follow the installation guide here <https://github.com/stevenlovegrove/Pangolin>, need version 0.5
 
 ### Install CUDA version 8.0
 A simple and clear install instruction of installing NVIDIA driver and CUDA can be found here <https://gist.github.com/wangruohui/df039f0dc434d6486f5d4d098aa52d07#common-errors-and-solutions>. 
