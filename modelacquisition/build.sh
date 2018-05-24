@@ -15,6 +15,12 @@ cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j
 
+cd ../../TSDF
+mkdir build
+cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j
+
 cd ../../../
 
 echo "Uncompress vocabulary ..."
@@ -23,7 +29,7 @@ cd Vocabulary
 tar -xf ORBvoc.txt.tar.gz
 cd ..
 
-echo "Configuring and building ORB_SLAM2 ..."
+echo "Configuring and building 3D reconstruction module ..."
 
 mkdir build
 cd build
