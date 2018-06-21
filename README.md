@@ -5,9 +5,7 @@ OpenARK is an open-source wearable augmented reality (AR) system founded at UC B
 At a Glance
 
   - **Technology stack**: C++, OpenCV, PCL, Boost, RealSense 3D SDK, Kinect SDK, CGL
-## Support
-Plase talk to Kuan (kuan_lu@berkeley.edu) for support on this section
-
+  
 ## Dependencies
 Hardware
 - Depth Camera
@@ -182,9 +180,15 @@ cmake ../
 make -j8
 ```
 
-## Support
-Plase talk to Kuan (kuan_lu@berkeley.edu) for support on this section
+## Usage
+After successful compilation, there will be four demos in the example folder, two for kinect, two for realsense sensors. The demos end with gl have a real-time preview of the reconstruction result. To use, follow the below command. In the example folder I provided serveral configuration files for some supported sensors.
+```
+./rgbd_kinect_gl path_to_vocabulary_file(../../Vocabulary/ORBVoc.txt) path_to_config_file.yaml(./ZR300.yaml)
+```
+In the GL demos, to start the reconstruction process, press space. To rotate and zoom the model, use W,A,S,D. To save the scanned model into ply files, press P and wait for few seconds, the model will be saved to the same path as the demos.
 
+## Support
+Plase contact Kuan (kuan_lu@berkeley.edu) for support on this section
 
 # Colorizer
 Colorizer is a separate build that takes input of a dense PLY mesh and simplify to 1% of original size, and apply texture mapping to reduce the size while retain the same visual quality.
