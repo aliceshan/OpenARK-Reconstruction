@@ -1,6 +1,6 @@
 # OpenARK - 3D Scanning Module
 
-OpenARK is an open-source wearable augmented reality (AR) system founded at UC Berkeley in 2016. The C++ based software offers innovative core functionalities to power a wide range of off-the-shelf AR components, including see-through glasses, depth cameras, and IMUs. The open-source platform includes fundamental tools such as AR-based camera calibration and SLAM, and it also includes higher-level functions to aid human-computer interaction, such as 3D gesture recognition and multi-user collaboration. In addition, it also supports real time scene reconstruction and mesh simplification. Currently, it supports both PMD Pico Flexx and Intel RealSense SR300 cameras. OpenARK currently only supports Windows and we have tested our platform with Windows 10 and Visual Studio 2015 Community Edition.
+OpenARK is an open-source wearable augmented reality (AR) system founded at UC Berkeley in 2016. The C++ based software offers innovative core functionalities to power a wide range of off-the-shelf AR components, including see-through glasses, depth cameras, and IMUs. The open-source platform includes fundamental tools such as AR-based camera calibration and SLAM, and it also includes higher-level functions to aid human-computer interaction, such as 3D gesture recognition and multi-user collaboration. In addition, it also supports real time scene reconstruction and mesh simplification. Currently, it supports both PMD Pico Flexx, Intel RealSense SR300 cameras and Kinect.
 
 At a Glance
 
