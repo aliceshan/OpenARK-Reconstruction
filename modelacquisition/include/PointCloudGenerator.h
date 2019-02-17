@@ -12,6 +12,11 @@
 #include <mutex>
 #include <thread>
 #include <map>
+#include <string>
+#include <iostream>
+#include <sstream>
+
+
 
 #include <opencv2/opencv.hpp>
 #include <pcl/io/pcd_io.h>

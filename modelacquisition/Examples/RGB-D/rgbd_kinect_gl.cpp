@@ -1,6 +1,9 @@
 #include <iostream>
 #include <algorithm>
+#include <string>
 #include <thread>
+#include <cstring>
+
 
 #include <GL/glew.h>
 #include <GL/glut.h>
@@ -194,7 +197,6 @@ void application_thread() {
 
     // Main loop
     int tframe = 1;
-
     while (!slam->IsRunning()) {
         Mat imRGB;
         freenect_sync_get_rgb_cv(imRGB, 0);
@@ -208,10 +210,12 @@ void application_thread() {
             printf("Error: Kinect not connected?\n");
             return;
         }
-
-        imshow("Depth", imD*5);
-
+	//std::cout << "TEST1" << std::endl << std::flush;
+        //imshow("Depth", imD*5);
+	//cv::waitKey(1);
+	//std::cout << "TEST2" << std::endl << std::flush;
         // Pass the image to the SLAM system
+        
         slam->PushFrame(imRGB, imD, tframe);
     }
 }
@@ -252,13 +256,19 @@ void keyboard_func(unsigned char key, int x, int y) {
     }
 
     if (key == 'p') {
-        pointCloudGenerator->SavePly("model_"+to_string(frame_id)+".ply");
-        string cmd = "./colorizer model_"+to_string(frame_id)+".ply 2048";
+        stringstream outputString;
+        //pointCloudGenerator->SavePly("model_"+to_string(frame_id)+".ply");
+        //pointCloudGenerator->SavePly("fi#le_file.ply", outputString);
+        cout << "YAY" << endl;
+        pointCloudGenerator->SavePly("file_file.ply", outputString);
+        cout << outputString.str() << endl;
+
+        /*string cmd = "./colorizer model_"+to_string(frame_id)+".ply 2048";
         system(cmd.c_str());
-        frame_id++;
+        frame_id++;*/
     }
 
-    if (key == 'v')
+    if (key == 'v') 
         wireframe = !wireframe;
 
 
@@ -314,7 +324,6 @@ int main(int argc, char **argv) {
     }, "PointCloudFusion");
 
     init();
-
     glutSetWindowTitle("OpenARK 3D Reconstruction");
     glutDisplayFunc(display_func);
     glutReshapeFunc(reshape_func);

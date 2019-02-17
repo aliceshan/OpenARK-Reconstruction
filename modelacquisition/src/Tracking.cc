@@ -525,7 +525,7 @@ void Tracking::Track()
 //    }
 
     if(!mCurrentFrame.mpReferenceKF->mbBA){
-        std::cout << "not local mapping optimatize, drop" << std::endl;
+        //std::cout << "not local mapping optimatize, drop" << std::endl;
         return;
     }
 

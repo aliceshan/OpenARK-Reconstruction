@@ -43,10 +43,21 @@ if (NOT OpenCV_FOUND)
     endif ()
 endif ()
 
-find_package(Eigen3 3.1.0 REQUIRED)
+find_package(Eigen3 REQUIRED)
 find_package(Pangolin REQUIRED)
 find_package(libfreenect REQUIRED)
 
+
+find_package( RSSDK2 )
+if( RSSDK2_FOUND )
+   message( STATUS "Found RSSDK2: ${RSSDK2_INCLUDE_DIR}" )
+endif( RSSDK2_FOUND )
+
+if( NOT RSSDK2_FOUND )
+  set( _RSSDK2_ "//" )
+else()
+  include_directories( ${RSSDK2_INCLUDE_DIR} )
+endif( NOT RSSDK2_FOUND )
 
 include_directories(
         ${PROJECT_SOURCE_DIR}
@@ -80,6 +91,8 @@ add_library(${PROJECT_NAME} SHARED
         src/Viewer.cc
         src/Octree.cpp
         src/PointCloudGenerator.cpp
+        src/SaveFrame.cpp
+	src/Timing.cpp
         )
 
 target_link_libraries(${PROJECT_NAME}
@@ -94,7 +107,7 @@ target_link_libraries(${PROJECT_NAME}
 # Build examples
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/RGB-D)
 
-add_executable(rgbd_kinect
+#[[add_executable(rgbd_kinect
         Examples/RGB-D/rgbd_kinect.cpp)
 
 target_link_libraries(rgbd_kinect
@@ -126,19 +139,42 @@ target_link_libraries(rgbd_realsense
         ${PROJECT_NAME}
         ${PCL_LIBRARIES}
         ${LIBUSB1_LIBRARIES}
-        realsense
+        ${RSSDK2_LIBRARY} 
         ${PROJECT_SOURCE_DIR}/Thirdparty/TSDF/lib/libtsdf_cuda.so
-        ${CUDA_LIBRARIES})
+        ${CUDA_LIBRARIES})]]
 
-add_executable(rgbd_realsense_gl
-        Examples/RGB-D/rgbd_realsense_gl.cpp
-        src/BridgeRSR200.cpp)
+add_executable(rgbd_realsense_d435
+        Examples/RGB-D/rgbd_realsense_d435.cpp
+        src/BridgeRSD435.cpp)
 
-target_link_libraries(rgbd_realsense_gl
+target_link_libraries(rgbd_realsense_d435
         ${PROJECT_NAME}
         ${PCL_LIBRARIES}
         ${LIBUSB1_LIBRARIES}
-        realsense
+        ${RSSDK2_LIBRARY} 
         ${PROJECT_SOURCE_DIR}/Thirdparty/TSDF/lib/libtsdf_cuda.so
         ${CUDA_LIBRARIES} glut GL GLU GLEW)
 
+#[[add_executable(rgbd_realsense_save
+        Examples/RGB-D/rgbd_realsense_save.cpp
+        src/BridgeRSD435.cpp)
+
+target_link_libraries(rgbd_realsense_save
+        ${PROJECT_NAME}
+        ${PCL_LIBRARIES}
+        ${LIBUSB1_LIBRARIES}
+        ${RSSDK2_LIBRARY} 
+        ${PROJECT_SOURCE_DIR}/Thirdparty/TSDF/lib/libtsdf_cuda.so
+        ${CUDA_LIBRARIES} glut GL GLU GLEW)
+
+add_executable(rgbd_realsense_load
+        Examples/RGB-D/rgbd_realsense_load_gl.cpp)
+#        src/BridgeRSD435.cpp)
+
+target_link_libraries(rgbd_realsense_load
+        ${PROJECT_NAME}
+        ${PCL_LIBRARIES}
+        ${LIBUSB1_LIBRARIES}
+        ${RSSDK2_LIBRARY}
+        ${PROJECT_SOURCE_DIR}/Thirdparty/TSDF/lib/libtsdf_cuda.so
+        ${CUDA_LIBRARIES} glut GL GLU GLEW)]]

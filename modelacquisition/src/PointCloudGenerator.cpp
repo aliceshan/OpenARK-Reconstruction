@@ -3,12 +3,13 @@
 //
 
 #include <chrono>
+#include <string>
 #include <mutex>
 #include <Utils.h>
 #include <MathUtils.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/filters/fast_bilateral.h>
-#include <opencv2/ximgproc.hpp>
+//#include <opencv2/ximgproc.hpp>
 #include "PointCloudGenerator.h"
 
 int frame_id = 0;
@@ -53,6 +54,7 @@ namespace ark {
 
 
     void PointCloudGenerator::RequestStop() {
+        std::cout<<"PointCloudGenerator stop"<<std::endl;
         std::unique_lock<std::mutex> lock(mRequestStopMutex);
         mbRequestStop = true;
     }
@@ -100,14 +102,7 @@ namespace ark {
 //
 //        int boundary = 0;
 //
-//        for(int i=0;i<imD_guided.rows;++i)
-//            for(int j=0;j<imD_guided.cols;++j)
-//                if(i<boundary||i>(imD_guided.rows-boundary)||j<boundary||(j>imD_guided.cols-boundary))
-//                    imD_guided.at<float>(i,j) = 0;
-//
-//        cv::imshow("guided",imD_guided);
-//        cv::waitKey(1);
-//        cv::FileStorage fs;
+//        for(int i=0;i<imD_guided.rows;++i)atorage fs;
 //        fs.open("t_wc_"+std::to_string(frame_id)+".xml",cv::FileStorage::WRITE);
 //        fs<<"pose"<<Twc;
 //        fs.release();
@@ -130,7 +125,7 @@ namespace ark {
         cam2base[15] = 1.0f;
 
         mpGpuTsdfGenerator->processFrame((float *)imD.datastart, (unsigned char *)imRGB.datastart, cam2base);
-        std::cout << "TSDF processed" << std::endl;
+        //std::cout << "TSDF processed" << std::endl;
     }
 
     void PointCloudGenerator::Render(){
