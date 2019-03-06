@@ -92,7 +92,7 @@ add_library(${PROJECT_NAME} SHARED
         src/Octree.cpp
         src/PointCloudGenerator.cpp
         src/SaveFrame.cpp
-	src/Timing.cpp
+	#src/Timing.cpp
         )
 
 target_link_libraries(${PROJECT_NAME}

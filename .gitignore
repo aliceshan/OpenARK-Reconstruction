@@ -293,3 +293,10 @@ include/Version.h
 # !tools/packages.config
 
 ./modelacquisition/Vocabulary/ORBvoc.txt
+
+*.jpg
+*.jpeg
+*.png
+*.gif
+
+.DS_Store
