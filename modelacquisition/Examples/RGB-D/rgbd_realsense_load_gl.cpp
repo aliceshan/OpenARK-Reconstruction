@@ -300,7 +300,9 @@ int main(int argc, char **argv) {
     pointCloudGenerator = new ark::PointCloudGenerator(argv[2]);
 //    slam = new ark::ORBSLAMSystem(argv[1], argv[2], ark::ORBSLAMSystem::RGBD, true);
 //    bridgeRSD435 = new BridgeRSD435();
+    std::cout << "here" << std::endl;
     saveFrame = new ark::SaveFrame("./frames/");
+    std::cout << "here" << std::endl;
 
 //    slam->AddKeyFrameAvailableHandler([pointCloudGenerator](const ark::RGBDFrame &keyFrame) {
 //        return pointCloudGenerator->OnKeyFrameAvailable(keyFrame);

@@ -123,16 +123,24 @@ namespace ark {
 //        std::unique_lock<std::mutex> lock(mKeyFrameMutex);
         cv::imwrite(rgbPath + std::to_string(frame.frameId) + ".png", frame.imRGB);
 
-        // cv::Mat depth255;
-        // cv::normalize(frame.imDepth, depth255, 0, 1000, cv::NORM_MINMAX, CV_8UC1); ////cast to 16
+        cv::Mat depth255;
+        //cv::normalize(frame.imDepth, depth255, 0, 1000, cv::NORM_MINMAX, CV_16UC1); ////cast to 16
 
-        // cv::imwrite(depthPath + std::to_string(frame.frameId) + ".png", depth255);
+        
+        frame.imDepth.convertTo(depth255, CV_16UC1, 1000);
+        cv::imwrite(depthPath + std::to_string(frame.frameId) + ".png", depth255);
 
         cv::FileStorage fs(twcPath + std::to_string(frame.frameId)+".xml",cv::FileStorage::WRITE);
         fs << "tcw" << frame.mTcw ;
-        fs << "depth" << frame.imDepth ;
-        // fs << "rgb" << frame.imRGB;
+        //fs << "depth" << frame.imDepth ;
         fs.release();
+
+        /*
+        cv::FileStorage fs2(depth_to_twc_Path + std::to_string(frame.frameId)+".xml",cv::FileStorage::WRITE);
+        fs2 << "depth" << depth255;
+        // fs << "rgb" << frame.imRGB;
+        fs2.release();
+        */
 
         mMapRGBDFrame[frame.frameId] = ark::RGBDFrame();
 
@@ -153,17 +161,21 @@ namespace ark {
             return frame;
         }
 
+        
+        cv::Mat depth255 = cv::imread(depthPath + std::to_string(frame.frameId) + ".png",-1);
+        //std::cout << "type: " << depth255.type() << std::endl ;
+        //if(frame.frameId == 1)
+        //	std::cout << "depth255 = "<< std::endl << " "  << depth255 << std::endl << std::endl;
 
-        // cv::Mat depth255 = cv::imread(depthPath + std::to_string(frame.frameId) + ".png");
-        // cv::normalize(depth255, frame.imDepth, 0.2, 10, cv::NORM_MINMAX, CV_32F);
-        // cv::imwrite(depthPath + std::to_string(frame.frameId) + ".png", depth255);
-        // cv::cvtColor(frame.imRGB, frame.imRGB, cv::COLOR_BGR2RGB);
+        depth255.convertTo(frame.imDepth, CV_32FC1);
+        frame.imDepth *= 0.001;
+        //cv::normalize(depth255, frame.imDepth, 0.2, 10, cv::NORM_MINMAX, CV_32F);
+        
 
-       // frame.imDepth = cv::imread(depthPath + std::to_string(frame.frameId) + ".png");
 
         cv::FileStorage fs2(twcPath + std::to_string(frame.frameId)+".xml", cv::FileStorage::READ);
         fs2["tcw"] >> frame.mTcw;
-        fs2["depth"] >> frame.imDepth;
+        //fs2["depth"] >> frame.imDepth;
         fs2.release();
 
         return frame;
