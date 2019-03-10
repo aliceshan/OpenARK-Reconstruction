@@ -178,3 +178,14 @@ target_link_libraries(rgbd_realsense_load
         ${RSSDK2_LIBRARY}
         ${PROJECT_SOURCE_DIR}/Thirdparty/TSDF/lib/libtsdf_cuda.so
         ${CUDA_LIBRARIES} glut GL GLU GLEW)]]
+
+add_executable(file_categorize
+        Examples/RGB-D/FileCategorize.cpp)
+
+target_link_libraries(file_categorize
+        ${PROJECT_NAME}
+        ${PCL_LIBRARIES}
+        ${LIBUSB1_LIBRARIES}
+        ${RSSDK2_LIBRARY}
+        ${PROJECT_SOURCE_DIR}/Thirdparty/TSDF/lib/libtsdf_cuda.so
+        ${CUDA_LIBRARIES} glut GL GLU GLEW)
