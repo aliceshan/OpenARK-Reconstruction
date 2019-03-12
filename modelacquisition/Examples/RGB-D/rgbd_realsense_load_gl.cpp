@@ -2,6 +2,12 @@
 #include <algorithm>
 #include <thread>
 
+
+#include <stdio.h>
+#include <sys/types.h>
+#include <dirent.h>
+
+
 #include <GL/glew.h>
 #include <GL/glut.h>
 
@@ -35,6 +41,8 @@ ark::SaveFrame *saveFrame;
 std::thread *app;
 
 using namespace std;
+
+
 
 void draw_box(float ox, float oy, float oz, float width, float height, float length) {
     glLineWidth(1.0f);
@@ -163,6 +171,28 @@ void reshape_func(GLint width, GLint height) {
     glLoadIdentity();
     glTranslatef(0.0f, 0.0f, -3.0f);
 }
+
+int countFiles(string filename){
+    DIR *dp;
+    int i = 0;
+    struct dirent *ep;     
+    dp = opendir (filename.c_str());
+
+    if (dp != NULL) {
+        while (ep = readdir (dp)) {
+            i++;
+        }
+        (void) closedir (dp);
+    }
+    else {
+        perror ("Couldn't open the directory");
+    }
+    
+    i -= 2;
+    printf("There's %d files in the current directory.\n", i);
+    return i;
+}
+
 
 void application_thread() {
 //    slam->Start();
