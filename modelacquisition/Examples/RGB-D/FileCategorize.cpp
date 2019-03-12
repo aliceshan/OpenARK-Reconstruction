@@ -6,14 +6,41 @@
 
 using namespace std;
 
-string folderPath, depthPath, tcwPath;
-float blockSize;
+string folderPath, rgbPath, depthPath, tcwPath;
+float blockSize; //size of reconstruction section size (meters)
+float maxAccurateDistance = 10; //based on camera limits to exclude noisy measurements (meters)
 int width_, height_;
 
-set<string>blocks;
 
 struct stat info;
 
+void createFolder(std::string folderPath){
+
+	/*
+    if(stat(folderPath.c_str(), &info) != 0 ) {
+        if (-1 == mkdir(folderPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH))
+        {
+            std::cout<< "Error creating directory "<< folderPath<<" !" << std::endl;
+            exit(1);
+        }
+        std::cout << folderPath << " is created" << folderPath << std::endl;
+    }else if( info.st_mode & S_IFDIR )  // S_ISDIR() doesn't exist on my windows
+        std::cout<<folderPath<<" is a directory"<<std::endl;
+    else
+        std::cout<<folderPath<<" is no directory"<<std::endl;
+        */
+	if( stat(folderPath.c_str(), &info) != 0){
+		cout <<"creating folder: " << folderPath << endl;
+        if (-1 == mkdir(folderPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH))
+        {
+            std::cout<< "Error creating directory "<< folderPath <<" !" << std::endl;
+            exit(1);
+        }
+    }
+    else{
+    	//cout << folderPath << " already exists" << endl;
+    }
+}
 
 
 string convert(cv::Mat point) {
@@ -23,12 +50,23 @@ string convert(cv::Mat point) {
 	return x + "_" + y + "_" + z;
 }
 
-void categorize(cv::Mat depthMat, cv::Mat projectionMat, cv::Mat cameraPos) {
+float magnitude(cv::Mat vectorPoint) {
+	float x = 0;
+	for (int i = 0; i < vectorPoint.rows; i++) {
+		x += vectorPoint.at<float>(i, 0) * vectorPoint.at<float>(i, 0);
+	}
+	return sqrt(x);
+}
+
+set<string> categorize(cv::Mat RGBMat, cv::Mat depthMat, cv::Mat projectionMat, cv::Mat cameraPos, int frame) {
+
+
+	set<string>blocks;
 
 
 	for (int i = 0; i < depthMat.rows; ++i) {
 		for (int j = 0; j < depthMat.cols; ++j) {
-			if (depthMat.at<float>(i,j) < 0.0001) {
+			if (depthMat.at<float>(i,j) < 0.0001 || depthMat.at<float>(i,j) > maxAccurateDistance) {
 				continue;
 			}
 
@@ -43,16 +81,26 @@ void categorize(cv::Mat depthMat, cv::Mat projectionMat, cv::Mat cameraPos) {
 
 			projectedPoint = (projectedPoint - cameraPos) * depthMat.at<float>(i,j);
 
+			cv::multiply(projectedPoint.col(0), 1.0f / magnitude(projectedPoint), projectedPoint.col(0));
+
+			projectedPoint *= depthMat.at<float>(i,j);
+
 			//cout << projectedPoint << endl;
 
 			string insideBlock = convert(projectedPoint);
 
 			blocks.insert(insideBlock);
 
+			if (insideBlock == "-24_-6_18") {
+				cout << depthMat.at<float>(i,j) << endl;
+			}
 
-			//cout << insideBlock << endl;
 		}
 	}
+	
+
+	return blocks;
+
 	
 }
 
@@ -65,19 +113,24 @@ int main(int argc, char **argv) {
     }
 
     folderPath = argv[1];
-    depthPath = folderPath + "depth/";
-    tcwPath = folderPath + "tcw/";
+    rgbPath = folderPath + "/RGB/";
+    depthPath = folderPath + "/depth/";
+    tcwPath = folderPath + "/tcw/";
 
 
-    if(stat(folderPath.c_str(), &info) != 0){
-    	cout << "what is this" << endl;
-    }
-    else if( info.st_mode & S_IFDIR ){
+    stat(folderPath.c_str(), &info);
+    if( info.st_mode & S_IFDIR ){
         cout << folderPath << " is a directory" << endl;
     }
     else{
-        cout << folderPath << " is no directory" << endl;
+        cout << folderPath << " is not a valid directory" << endl;
+        return 0;
     }
+
+
+    createFolder(folderPath + "/frames_categorized/");
+
+
 
     blockSize = atof(argv[2]);
     string strSettingsFile = argv[3];
@@ -98,40 +151,36 @@ int main(int argc, char **argv) {
 
     int empty = 0;
     int frame = 1;
+    cv::Mat RGBMat;
     cv::Mat depthMat;
     cv::Mat tcwMat;
 
 
     while (true) {
+    	RGBMat = cv::imread(rgbPath + std::to_string(frame) + ".png",cv::IMREAD_COLOR);
     	depthMat = cv::imread(depthPath + to_string(frame) + ".png", -1);
     	depthMat.convertTo(depthMat, CV_32FC1);
         depthMat *= 0.001;
 
 
-/*
-        for (int i = 15; i < 16; ++i) {
-			for (int j = 100; j < 200; ++j) {
-				cout << depthMat.at<float>(i,j) << endl;
-			}
-		}
-*/
-
-
-    	frame++;
     	if (depthMat.rows == 0) {
-    		cout << "no image found at frame_id: " << frame - 1<< endl;
+    		cout << "no image found at frame_id: " << frame << endl;
     		empty++;
-    		if (empty > 5) {
+    		frame++;
+    		if (empty > 6) {
     			break;
     		}
     		continue;
     	} 
 
-    	cout << "calculating frame: " << frame - 1 << endl;
+    	cout << "calculating frame: " << frame << endl;
 
 
     	cv::FileStorage fs2(tcwPath + to_string(frame) + ".xml", cv::FileStorage::READ);
     	fs2["tcw"] >> tcwMat;
+
+    	//cout << tcwMat << endl;
+
 
     	cv::Mat projectionMat;
     	cv::Mat projectionMatOne = (K * tcwMat.rowRange(0,3));
@@ -150,13 +199,42 @@ int main(int argc, char **argv) {
     	cv::waitKey(0);*/
 
 
-    	categorize(depthMat, projectionMat, cameraPos);
+    	set<string> blocks = categorize(RGBMat, depthMat, projectionMat, cameraPos, frame);
 
+    	
+    	for (string block : blocks) {
+    		cout << "block to assign: " << block << endl;
+
+    		string pathAssign = folderPath + "/frames_categorized/" + block + "/";
+    		string rgbPathAssign = pathAssign + "RGB/";
+    		string depthPathAssign = pathAssign + "depth/";
+    		string tcwPathAssign = pathAssign + "tcw/";
+
+    		createFolder(pathAssign);
+    		createFolder(rgbPathAssign);
+    		createFolder(depthPathAssign);
+    		createFolder(tcwPathAssign);
+
+
+
+    		cv::imwrite(rgbPathAssign + std::to_string(frame) + ".png", RGBMat);
+
+    		cv::Mat depth255;
+    		depthMat.convertTo(depth255, CV_16UC1, 1000);
+
+    		cv::imwrite(depthPathAssign + std::to_string(frame) + ".png", depth255);
+
+    		cv::FileStorage fs(tcwPathAssign + std::to_string(frame)+".xml",cv::FileStorage::WRITE);
+    		fs << "tcw" << tcwMat;
+    		fs.release();
+
+
+    	}
+
+    	frame++;
 
     	
     }
-    for (string block : blocks) {
-    	cout << block << endl;
-    }
+    
 
 }
