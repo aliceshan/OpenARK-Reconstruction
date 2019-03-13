@@ -200,7 +200,7 @@ void application_thread() {
 //    bridgeRSD435->Start();
 
     // Main loop
-    int tframe = 1;
+    int tframe = 0;
     int empty = 0;
     while (true) {
 
@@ -231,7 +231,6 @@ void application_thread() {
         cv::cvtColor(frame.imRGB, frame.imRGB, cv::COLOR_BGR2RGB);
 
         pointCloudGenerator->OnKeyFrameAvailable(frame);
-        empty = 0;
     }
 }
 
@@ -331,7 +330,7 @@ int main(int argc, char **argv) {
 //    slam = new ark::ORBSLAMSystem(argv[1], argv[2], ark::ORBSLAMSystem::RGBD, true);
 //    bridgeRSD435 = new BridgeRSD435();
     std::cout << "here" << std::endl;
-    saveFrame = new ark::SaveFrame("./frames/");
+    saveFrame = new ark::SaveFrame("./scene0220_02/");
     std::cout << "here" << std::endl;
 
 //    slam->AddKeyFrameAvailableHandler([pointCloudGenerator](const ark::RGBDFrame &keyFrame) {

@@ -91,10 +91,6 @@ set<string> categorize(cv::Mat RGBMat, cv::Mat depthMat, cv::Mat projectionMat, 
 
 			blocks.insert(insideBlock);
 
-			if (insideBlock == "-24_-6_18") {
-				cout << depthMat.at<float>(i,j) << endl;
-			}
-
 		}
 	}
 	

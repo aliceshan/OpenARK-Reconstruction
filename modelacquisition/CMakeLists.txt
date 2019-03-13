@@ -189,3 +189,4 @@ target_link_libraries(file_categorize
         ${RSSDK2_LIBRARY}
         ${PROJECT_SOURCE_DIR}/Thirdparty/TSDF/lib/libtsdf_cuda.so
         ${CUDA_LIBRARIES} glut GL GLU GLEW)
+

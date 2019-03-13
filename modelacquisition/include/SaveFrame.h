@@ -48,8 +48,8 @@ namespace ark{
         std::string folderPath;
         std::string rgbPath;
         std::string depthPath;
-        std::string twcPath;
-        std::string depth_to_twc_Path;
+        std::string tcwPath;
+        std::string depth_to_tcw_Path;
 
 //        //TSDF Generator
 //        GpuTsdfGenerator *mpGpuTsdfGenerator;

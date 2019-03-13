@@ -7,6 +7,8 @@
 #include <Utils.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <iostream>
+#include <fstream>
 
 //#include <MathUtils.h>
 //#include <pcl/filters/statistical_outlier_removal.h>
@@ -40,11 +42,11 @@ namespace ark {
 
         rgbPath = folderPath +"RGB/";
         depthPath = folderPath +"depth/";
-        twcPath = folderPath +"tcw/";
+        tcwPath = folderPath +"tcw/";
 
         createFolder(info, rgbPath);
         createFolder(info, depthPath);
-        createFolder(info, twcPath);
+        createFolder(info, tcwPath);
 
         mKeyFrame.frameId = -1;
         mbRequestStop = false;
@@ -130,13 +132,13 @@ namespace ark {
         frame.imDepth.convertTo(depth255, CV_16UC1, 1000);
         cv::imwrite(depthPath + std::to_string(frame.frameId) + ".png", depth255);
 
-        cv::FileStorage fs(twcPath + std::to_string(frame.frameId)+".xml",cv::FileStorage::WRITE);
+        cv::FileStorage fs(tcwPath + std::to_string(frame.frameId)+".xml",cv::FileStorage::WRITE);
         fs << "tcw" << frame.mTcw ;
         //fs << "depth" << frame.imDepth ;
         fs.release();
 
         /*
-        cv::FileStorage fs2(depth_to_twc_Path + std::to_string(frame.frameId)+".xml",cv::FileStorage::WRITE);
+        cv::FileStorage fs2(depth_to_tcw_Path + std::to_string(frame.frameId)+".xml",cv::FileStorage::WRITE);
         fs2 << "depth" << depth255;
         // fs << "rgb" << frame.imRGB;
         fs2.release();
@@ -155,11 +157,15 @@ namespace ark {
 
         frame.frameId = frameId;
 
-        frame.imRGB = cv::imread(rgbPath + std::to_string(frame.frameId) + ".png",cv::IMREAD_COLOR);
-        if(frame.imRGB.rows == 0){
+
+        cv::Mat rgbBig = cv::imread(rgbPath + std::to_string(frame.frameId) + ".jpg",cv::IMREAD_COLOR);
+
+        if(rgbBig.rows == 0){
             frame.frameId = -1;
             return frame;
         }
+
+        cv::resize(rgbBig, frame.imRGB, cv::Size(640,480));
 
         
         cv::Mat depth255 = cv::imread(depthPath + std::to_string(frame.frameId) + ".png",-1);
@@ -173,10 +179,37 @@ namespace ark {
         
 
 
-        cv::FileStorage fs2(twcPath + std::to_string(frame.frameId)+".xml", cv::FileStorage::READ);
+        //TCW FROM XML
+        /*
+        cv::FileStorage fs2(tcwPath + std::to_string(frame.frameId)+".xml", cv::FileStorage::READ);
         fs2["tcw"] >> frame.mTcw;
+        
         //fs2["depth"] >> frame.imDepth;
         fs2.release();
+        */
+
+
+
+        //TCW FROM TEXT
+        float tcwArr[4][4];
+        std::ifstream tcwFile;
+        tcwFile.open(tcwPath + std::to_string(frame.frameId) + ".txt");
+        for (int i = 0; i < 4; ++i) {
+            for (int k = 0; k < 4; ++k) {
+                tcwFile >> tcwArr[i][k];
+            }
+        }
+        cv::Mat tcw(4, 4, CV_32FC1, tcwArr);    
+        frame.mTcw = tcw.inv();
+
+
+
+
+        //std::cout << "debugging frame#: " << frame.frameId << std::endl; 
+        //std::cout << tcw << std::endl;
+        //std::cout << frame.imRGB.rows << std::endl;
+        //std::cout << frame.imDepth << std::endl;
+        //std::cout << frame.imDepth.rows << std::endl;
 
         return frame;
     }
