@@ -158,7 +158,7 @@ namespace ark {
         frame.frameId = frameId;
 
 
-        cv::Mat rgbBig = cv::imread(rgbPath + std::to_string(frame.frameId) + ".jpg",cv::IMREAD_COLOR);
+        cv::Mat rgbBig = cv::imread(rgbPath + std::to_string(frame.frameId) + ".png",cv::IMREAD_COLOR);
 
         if(rgbBig.rows == 0){
             frame.frameId = -1;
@@ -180,16 +180,16 @@ namespace ark {
 
 
         //TCW FROM XML
-        /*
+        
         cv::FileStorage fs2(tcwPath + std::to_string(frame.frameId)+".xml", cv::FileStorage::READ);
         fs2["tcw"] >> frame.mTcw;
         
         //fs2["depth"] >> frame.imDepth;
         fs2.release();
-        */
+        
 
 
-
+        /*
         //TCW FROM TEXT
         float tcwArr[4][4];
         std::ifstream tcwFile;
@@ -201,6 +201,7 @@ namespace ark {
         }
         cv::Mat tcw(4, 4, CV_32FC1, tcwArr);    
         frame.mTcw = tcw.inv();
+        */
 
 
 

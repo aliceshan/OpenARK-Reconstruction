@@ -103,8 +103,8 @@ set<string> categorize(cv::Mat RGBMat, cv::Mat depthMat, cv::Mat projectionMat, 
 
 
 int main(int argc, char **argv) {
-	if (argc != 4) {
-        cerr << endl << "Usage: ./FileCategorize path_to_frames size_of_block(m) settings_file" << endl;
+	if (argc != 3) {
+        cerr << endl << "Usage: ./FileCategorize path_to_frames settings_file" << endl;
         return 1;
     }
 
@@ -127,9 +127,7 @@ int main(int argc, char **argv) {
     createFolder(folderPath + "/frames_categorized/");
 
 
-
-    blockSize = atof(argv[2]);
-    string strSettingsFile = argv[3];
+    string strSettingsFile = argv[2];
 
     cv::FileStorage fSettings(strSettingsFile, cv::FileStorage::READ);
 
@@ -139,6 +137,10 @@ int main(int argc, char **argv) {
     float cy_ = fSettings["Camera.cy"];
     width_ = fSettings["Camera.width"];
     height_ = fSettings["Camera.height"];
+    float voxSize = fSettings["Voxel.Size.Offline"];
+    int voxDim = fSettings["Voxel.Dim.x"];
+
+    blockSize = voxSize * voxDim;
 
 
 

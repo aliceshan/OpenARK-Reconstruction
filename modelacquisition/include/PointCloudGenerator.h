@@ -27,6 +27,8 @@ namespace ark{
     public:
         PointCloudGenerator(std::string strSettingsFile);
 
+        PointCloudGenerator(std::string strSettingsFile, float originX, float originY, float originZ);
+
         void Start();
 
         void RequestStop();
@@ -41,9 +43,11 @@ namespace ark{
 
         void Run();
 
-        void SavePly(std::string filename);
+        void SavePly();
 
         void Render();
+
+        void ClearTSDF();
 
     private:
 
@@ -75,6 +79,9 @@ namespace ark{
         float maxdepth_;
         int width_, height_;
         float depthfactor_;
+
+        bool offlineRecon;
+        float v_g_o_x, v_g_o_y, v_g_o_z;
     };
 }
 

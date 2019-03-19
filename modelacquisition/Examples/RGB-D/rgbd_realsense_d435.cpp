@@ -231,7 +231,7 @@ void keyboard_func(unsigned char key, int x, int y) {
         pointCloudGenerator->RequestStop();
         bridgeRSD435->Stop();
 
-        pointCloudGenerator->SavePly("model.ply");
+        pointCloudGenerator->SavePly();
     }
 
     if (key == 'v')

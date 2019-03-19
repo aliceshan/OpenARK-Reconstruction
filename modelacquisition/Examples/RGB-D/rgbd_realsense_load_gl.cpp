@@ -1,6 +1,8 @@
 #include <iostream>
 #include <algorithm>
 #include <thread>
+#include <set>
+#include <vector>
 
 
 #include <stdio.h>
@@ -34,11 +36,11 @@ float yRotLength = 0.0f;
 bool wireframe = false;
 bool stop = false;
 
-ark::PointCloudGenerator *pointCloudGenerator;
 //ark::ORBSLAMSystem *slam;
 //BridgeRSD435 *bridgeRSD435;
-ark::SaveFrame *saveFrame;
 std::thread *app;
+std::string settingsFile;
+std::string directoryName;
 
 using namespace std;
 
@@ -144,7 +146,7 @@ void display_func() {
     glRotatef(xRot, 1.0f, 0.0f, 0.0f);
     glRotatef(yRot, 0.0f, 1.0f, 0.0f);
 
-    pointCloudGenerator->Render();
+    //pointCloudGenerator->Render();
 
     draw_origin(4.f);
 
@@ -172,15 +174,21 @@ void reshape_func(GLint width, GLint height) {
     glTranslatef(0.0f, 0.0f, -3.0f);
 }
 
-int countFiles(string filename){
+set<string> getFiles(string filename){
+    cout << "getting names from: " << filename << endl;
+    set<string> files;
     DIR *dp;
     int i = 0;
     struct dirent *ep;     
     dp = opendir (filename.c_str());
 
     if (dp != NULL) {
-        while (ep = readdir (dp)) {
-            i++;
+        while ((ep = readdir (dp))) {
+            string name = ep -> d_name;
+            if (name.length() > 2) {
+                files.insert(name);
+                i++;
+            }
         }
         (void) closedir (dp);
     }
@@ -188,50 +196,75 @@ int countFiles(string filename){
         perror ("Couldn't open the directory");
     }
     
-    i -= 2;
     printf("There's %d files in the current directory.\n", i);
-    return i;
+    return files;
+}
+
+
+
+vector<float> getOrigin(string origin) {
+    cout << "THIS ORIGIN: " << origin << endl;
+    size_t pos = 0;
+    string delimiter = "_";
+    vector<float> originF;
+    int i = 0;
+    while ((pos = origin.find(delimiter)) != string::npos) {
+        originF.push_back(atof(origin.substr(0, pos).c_str()));
+        origin.erase(0, pos + delimiter.length());
+        i++;
+    }
+    originF.push_back(atof(origin.c_str()));
+    return originF;
+    
 }
 
 
 void application_thread() {
+
+    set<string> blocks = getFiles(directoryName);
+
+    for (string origin: blocks) {  
+
+        vector<float> originF = getOrigin(origin);
+        
+        ark::SaveFrame *saveFrame = new ark::SaveFrame(directoryName + origin + "/");
+        //ark::PointCloudGenerator *pointCloudGenerator = new ark::PointCloudGenerator(settingsFile, 
+         //   originF.at(0), originF.at(1), originF.at(2));
+        ark::PointCloudGenerator *pointCloudGenerator = new ark::PointCloudGenerator(settingsFile, -6, -6, 0);
+
+        pointCloudGenerator->Start();
+
+        set<string> frames = getFiles(directoryName + origin + "/RGB/");
+        set<int> tframes;
+        for (string frameC: frames) {
+            int tframe_ = atoi(frameC.substr(0, frameC.find(".")).c_str());
+            tframes.insert(tframe_);
+        }
+
+
+        for (int tframe: tframes) {
+
+
+            ark::RGBDFrame frame = saveFrame->frameLoad(tframe);
+
+            cv::cvtColor(frame.imRGB, frame.imRGB, cv::COLOR_BGR2RGB);
+
+            pointCloudGenerator->OnKeyFrameAvailable(frame);
+
+        }
+        pointCloudGenerator->RequestStop();
+        pointCloudGenerator->SavePly();
+        pointCloudGenerator->ClearTSDF();
+        delete pointCloudGenerator;
+        delete saveFrame;
+    }
+
 //    slam->Start();
-    pointCloudGenerator->Start();
+    
 //    bridgeRSD435->Start();
 
     // Main loop
-    int tframe = 0;
-    int empty = 0;
-    while (true) {
-
-        if(empty == 5)
-            break;
-
-        ark::RGBDFrame frame = saveFrame->frameLoad(tframe);
-        tframe ++ ;
-
-        if(frame.frameId == -1){
-            empty ++;
-            continue;
-        }
-        // imshow("imRGB",imRGB);
-
-//        string imgname = "imD"+ to_string(tframe) + ".png";
-//
-//        imwrite(imgname,imD);
-
-//        cv::imshow("Depth Map", imD);
-//        cv::imshow("RGB Map", imRGB);
-
-        // std::cout<<"RGB"<<imRGB.cols << "," <<imRGB.rows << "," <<imRGB.type()<<endl;
-        // std::cout<<"D"<<imD.cols << "," <<imD.rows << "," <<imD.type()<<endl;
-         // cv::waitKey(10);
-        // Pass the image to the SLAM system
-//        slam->PushFrame(imRGB, imD, tframe);
-        cv::cvtColor(frame.imRGB, frame.imRGB, cv::COLOR_BGR2RGB);
-
-        pointCloudGenerator->OnKeyFrameAvailable(frame);
-    }
+    
 }
 
 void keyboard_func(unsigned char key, int x, int y) {
@@ -241,7 +274,7 @@ void keyboard_func(unsigned char key, int x, int y) {
             stop = !stop;
         } else {
 //            slam->RequestStop();
-            pointCloudGenerator->RequestStop();
+            //pointCloudGenerator->RequestStop();
 //            bridgeRSD435->Stop();
         }
     }
@@ -272,10 +305,10 @@ void keyboard_func(unsigned char key, int x, int y) {
 
     if (key == 'p') {
 //        slam->RequestStop();
-        pointCloudGenerator->RequestStop();
+        //pointCloudGenerator->RequestStop();
 //        bridgeRSD435->Stop();
 
-        pointCloudGenerator->SavePly("model.ply");
+        //pointCloudGenerator->SavePly("model.ply");
     }
 
     if (key == 'v')
@@ -316,30 +349,35 @@ void motion_func(int x, int y) {
 
 int main(int argc, char **argv) {
     if (argc != 3) {
-        cerr << endl << "Usage: ./rgbd_realsense path_to_vocabulary path_to_settings" << endl;
+        cerr << endl << "Usage: ./rgbd_realsense path_to_frames path_to_settings" << endl;
         return 1;
     }
 
+    /*
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
     glutInitWindowSize(window_width, window_height);
     (void) glutCreateWindow("GLUT Program");
+    */
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    pointCloudGenerator = new ark::PointCloudGenerator(argv[2]);
+    settingsFile = argv[2];
+
 //    slam = new ark::ORBSLAMSystem(argv[1], argv[2], ark::ORBSLAMSystem::RGBD, true);
 //    bridgeRSD435 = new BridgeRSD435();
-    std::cout << "here" << std::endl;
-    saveFrame = new ark::SaveFrame("./scene0220_02/");
-    std::cout << "here" << std::endl;
+    
+    directoryName = argv[1];
+    directoryName += "/frames_categorized/";
 
+    
 //    slam->AddKeyFrameAvailableHandler([pointCloudGenerator](const ark::RGBDFrame &keyFrame) {
 //        return pointCloudGenerator->OnKeyFrameAvailable(keyFrame);
 //    }, "PointCloudFusion");
 
-    init();
+    /*init();
 
     glutSetWindowTitle("OpenARK 3D Reconstruction");
+
     glutDisplayFunc(display_func);
     glutReshapeFunc(reshape_func);
     glutIdleFunc(idle_func);
@@ -347,11 +385,13 @@ int main(int argc, char **argv) {
     glutMotionFunc(motion_func);
     glutKeyboardFunc(keyboard_func);
     glutMainLoop();
+    */
 
-    delete pointCloudGenerator;
+    application_thread();
+
+    
 //    delete slam;
 //    delete bridgeRSD435;
-    delete saveFrame;
     delete app;
 
     return EXIT_SUCCESS;

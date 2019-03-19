@@ -40,13 +40,18 @@ Camera.RGB: 0
 # Close/Far threshold. Baseline times.
 ThDepth: 40.0
 
+<<<<<<< HEAD
 MaxDepth: 2.0
+=======
+MaxDepth: 10.0
+>>>>>>> tmp
 
 # Deptmap values factor
 DepthMapFactor: 1000
 
 # TSDF values
 
+<<<<<<< HEAD
 Voxel.Origin.x: -1.5 #right
 
 Voxel.Origin.y: -1.5 #forward
@@ -56,6 +61,23 @@ Voxel.Origin.z: 0.5 #up
 Voxel.Size: 0.036
 
 Voxel.TruncMargin: 0.18
+=======
+Voxel.Origin.x: -5 #right
+
+Voxel.Origin.y: -5 #forward
+ 
+Voxel.Origin.z: -1 #up
+
+Voxel.Size.Online: 0.1
+
+Voxel.TruncMargin.Online: 0.5
+
+Voxel.Size.Offline: 0.03
+
+Voxel.TruncMargin.Offline: 0.15
+
+
+>>>>>>> tmp
 
 Voxel.Dim.x: 200
 

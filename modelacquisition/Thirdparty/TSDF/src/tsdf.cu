@@ -583,6 +583,19 @@ namespace ark {
     MarchingCubeParam* GpuTsdfGenerator::getMarchingCubeParam() {
         return param_;
     }
+
+    __host__
+    void GpuTsdfGenerator::clearMemory() {
+        cudaFree(dev_TSDF_);
+        cudaFree(dev_param_);
+        cudaFree(dev_TSDF_color_);
+        cudaFree(dev_weight_);
+        cudaFree(dev_tri_);
+        cudaFree(dev_K_);
+        cudaFree(dev_c2w_);
+        cudaFree(dev_depth_);
+        cudaFree(dev_rgb_);
+    }
 }
 
 
