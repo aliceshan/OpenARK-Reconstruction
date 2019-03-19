@@ -5,13 +5,19 @@
 #--------------------------------------------------------------------------------------------
 
 # Camera calibration and distortion parameters (OpenCV)  
-# fx and fy = camera focal lengths expressed in pixel units 
+# fx and fy = camera focal lengths expressed in pixel units
 # cx and cy = principal point that is usually at the image center
 # these parameters depend on camera resolution
-Camera.fx: 383.49 #618.665
-Camera.fy: 383.49 #618.76
-Camera.cx: 321.853 #328.856
-Camera.cy: 245.121 #237.814
+#Camera.fx: 383.49 #618.665
+#Camera.fy: 383.49 #618.76
+#Camera.cx: 321.853 #328.856
+#Camera.cy: 245.121 #237.814
+
+Camera.fx: 643.00 #618.665
+Camera.fy: 643.00 #618.76
+Camera.cx: 629.00 #328.856
+Camera.cy: 405.00 #237.814
+
 #Disortion parameters: these are the same regardless of the camera resolution used
 Camera.k1: 0.0
 Camera.k2: 0.0
@@ -41,15 +47,21 @@ DepthMapFactor: 1000
 
 # TSDF values
 
-Voxel.Origin.x: 7.5 #right
+Voxel.Origin.x: -5 #right
 
-Voxel.Origin.y: 2.5 #forward
+Voxel.Origin.y: -5 #forward
  
-Voxel.Origin.z: -5 #up
+Voxel.Origin.z: -1 #up
 
-Voxel.Size: 0.03
+Voxel.Size.Online: 0.1
 
-Voxel.TruncMargin: 0.15
+Voxel.TruncMargin.Online: 0.5
+
+Voxel.Size.Offline: 0.03
+
+Voxel.TruncMargin.Offline: 0.15
+
+
 
 Voxel.Dim.x: 200
 
@@ -84,7 +96,7 @@ ORBextractor.minThFAST: 7
 Viewer.KeyFrameSize: 0.05
 Viewer.KeyFrameLineWidth: 1
 Viewer.GraphLineWidth: 0.9
-Viewer.PointSize:2
+Viewer.PointSize: 2
 Viewer.CameraSize: 0.08
 Viewer.CameraLineWidth: 3
 Viewer.ViewpointX: 0

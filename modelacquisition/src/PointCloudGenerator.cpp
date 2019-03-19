@@ -17,6 +17,8 @@ int frame_id = 0;
 namespace ark {
 
     PointCloudGenerator::PointCloudGenerator(std::string strSettingsFile) {
+        offlineRecon = false;
+
         cv::FileStorage fSettings(strSettingsFile, cv::FileStorage::READ);
 
         fx_ = fSettings["Camera.fx"];
@@ -28,13 +30,47 @@ namespace ark {
         depthfactor_ = fSettings["DepthMapFactor"];
         maxdepth_ = fSettings["MaxDepth"];
 
-        float v_g_o_x = fSettings["Voxel.Origin.x"];
-        float v_g_o_y = fSettings["Voxel.Origin.y"];
-        float v_g_o_z = fSettings["Voxel.Origin.z"];
+        v_g_o_x = fSettings["Voxel.Origin.x"];
+        v_g_o_y = fSettings["Voxel.Origin.y"];
+        v_g_o_z = fSettings["Voxel.Origin.z"];
 
-        float v_size = fSettings["Voxel.Size"];
+        float v_size = fSettings["Voxel.Size.Online"];
 
-        float v_trunc_margin = fSettings["Voxel.TruncMargin"];
+        float v_trunc_margin = fSettings["Voxel.TruncMargin.Online"];
+
+        int v_g_d_x = fSettings["Voxel.Dim.x"];
+        int v_g_d_y = fSettings["Voxel.Dim.y"];
+        int v_g_d_z = fSettings["Voxel.Dim.z"];
+
+        mpGpuTsdfGenerator = new GpuTsdfGenerator(width_,height_,fx_,fy_,cx_,cy_, maxdepth_,
+                                                           v_g_o_x,v_g_o_y,v_g_o_z,v_size,
+                                                           v_trunc_margin,v_g_d_x,v_g_d_y,v_g_d_z);
+
+        mKeyFrame.frameId = -1;
+        mbRequestStop = false;
+    }
+
+    PointCloudGenerator::PointCloudGenerator(std::string strSettingsFile, float originX, float originY, float originZ) {
+        offlineRecon = true;
+
+        cv::FileStorage fSettings(strSettingsFile, cv::FileStorage::READ);
+
+        fx_ = fSettings["Camera.fx"];
+        fy_ = fSettings["Camera.fy"];
+        cx_ = fSettings["Camera.cx"];
+        cy_ = fSettings["Camera.cy"];
+        width_ = fSettings["Camera.width"];
+        height_ = fSettings["Camera.height"];
+        depthfactor_ = fSettings["DepthMapFactor"];
+        maxdepth_ = fSettings["MaxDepth"];
+
+        v_g_o_x = originX;
+        v_g_o_y = originY;
+        v_g_o_z = originZ;
+
+        float v_size = fSettings["Voxel.Size.Offline"];
+
+        float v_trunc_margin = fSettings["Voxel.TruncMargin.Offline"];
 
         int v_g_d_x = fSettings["Voxel.Dim.x"];
         int v_g_d_y = fSettings["Voxel.Dim.y"];
@@ -132,8 +168,14 @@ namespace ark {
         mpGpuTsdfGenerator->render();
     }
 
-    void PointCloudGenerator::SavePly(std::string filename) {
-        mpGpuTsdfGenerator->SavePLY(filename);
+    void PointCloudGenerator::SavePly() {
+        if (offlineRecon) {
+            mpGpuTsdfGenerator->SavePLY("model_offline_" + std::to_string((int)v_g_o_x) + "_" + 
+               std::to_string((int)v_g_o_y) + "_" + std::to_string((int)v_g_o_z) + ".ply");
+        }
+        else {
+            mpGpuTsdfGenerator->SavePLY("model_online.ply");
+        }
     }
 
     void PointCloudGenerator::OnKeyFrameAvailable(const RGBDFrame &keyFrame) {
@@ -154,6 +196,10 @@ namespace ark {
 
     void PointCloudGenerator::OnLoopClosureDetected() {
         std::cout << "LoopClosureDetected" << std::endl;
+    }
+
+    void PointCloudGenerator::ClearTSDF() {
+        mpGpuTsdfGenerator->clearMemory();
     }
 }
 
