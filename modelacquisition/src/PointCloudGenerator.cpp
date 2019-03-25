@@ -16,6 +16,7 @@ int frame_id = 0;
 
 namespace ark {
 
+    //online constructor
     PointCloudGenerator::PointCloudGenerator(std::string strSettingsFile) {
         offlineRecon = false;
 
@@ -50,6 +51,7 @@ namespace ark {
         mbRequestStop = false;
     }
 
+    //offline constructor
     PointCloudGenerator::PointCloudGenerator(std::string strSettingsFile, float originX, float originY, float originZ) {
         offlineRecon = true;
 

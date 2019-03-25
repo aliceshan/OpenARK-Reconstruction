@@ -15,8 +15,9 @@
 
 Camera.fx: 643.00 #618.665
 Camera.fy: 643.00 #618.76
-Camera.cx: 629.00 #328.856
-Camera.cy: 405.00 #237.814
+Camera.cx: 328.856 #629.00 moved these back to original from old yaml
+Camera.cy: 237.814 #405.00
+
 
 #Disortion parameters: these are the same regardless of the camera resolution used
 Camera.k1: 0.0
@@ -48,15 +49,15 @@ DepthMapFactor: 1000
 # TSDF values
 
 
-Voxel.Origin.x: -5 #right
+Voxel.Origin.x: -2.5 #right
 
-Voxel.Origin.y: -5 #forward
+Voxel.Origin.y: -3 #forward
  
 Voxel.Origin.z: -1 #up
 
-Voxel.Size.Online: 0.1
+Voxel.Size.Online: 0.03
 
-Voxel.TruncMargin.Online: 0.5
+Voxel.TruncMargin.Online: 0.15
 
 Voxel.Size.Offline: 0.03
 

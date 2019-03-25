@@ -123,7 +123,9 @@ namespace ark {
             return;
 
 //        std::unique_lock<std::mutex> lock(mKeyFrameMutex);
-        cv::imwrite(rgbPath + std::to_string(frame.frameId) + ".png", frame.imRGB);
+        cv::Mat imBGR;
+        cv::cvtColor(frame.imRGB, imBGR, CV_RGB2BGR);
+        cv::imwrite(rgbPath + std::to_string(frame.frameId) + ".png", imBGR);
 
         cv::Mat depth255;
         //cv::normalize(frame.imDepth, depth255, 0, 1000, cv::NORM_MINMAX, CV_16UC1); ////cast to 16
@@ -167,13 +169,17 @@ namespace ark {
 
         cv::resize(rgbBig, frame.imRGB, cv::Size(640,480));
 
-        
+        rgbBig.release();
+ 
         cv::Mat depth255 = cv::imread(depthPath + std::to_string(frame.frameId) + ".png",-1);
         //std::cout << "type: " << depth255.type() << std::endl ;
         //if(frame.frameId == 1)
         //	std::cout << "depth255 = "<< std::endl << " "  << depth255 << std::endl << std::endl;
 
         depth255.convertTo(frame.imDepth, CV_32FC1);
+
+        depth255.release();
+
         frame.imDepth *= 0.001;
         //cv::normalize(depth255, frame.imDepth, 0.2, 10, cv::NORM_MINMAX, CV_32F);
         

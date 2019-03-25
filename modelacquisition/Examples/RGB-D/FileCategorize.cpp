@@ -1,3 +1,6 @@
+//r*(d*(K^-1)*<x,y,1>) + T
+
+
 #include <iostream>
 #include <set>
 #include <opencv2/opencv.hpp>
@@ -58,7 +61,7 @@ float magnitude(cv::Mat vectorPoint) {
 	return sqrt(x);
 }
 
-set<string> categorize(cv::Mat RGBMat, cv::Mat depthMat, cv::Mat projectionMat, cv::Mat cameraPos, int frame) {
+set<string> categorize(cv::Mat depthMat, cv::Mat cameraIntrinsic, cv::Mat tcwMat) {
 
 
 	set<string>blocks;
@@ -66,28 +69,33 @@ set<string> categorize(cv::Mat RGBMat, cv::Mat depthMat, cv::Mat projectionMat, 
 
 	for (int i = 0; i < depthMat.rows; ++i) {
 		for (int j = 0; j < depthMat.cols; ++j) {
-			if (depthMat.at<float>(i,j) < 0.0001 || depthMat.at<float>(i,j) > maxAccurateDistance) {
+            float pointDepth = depthMat.at<float>(i, j);
+			if (pointDepth < 0.0001 || pointDepth > maxAccurateDistance) {
 				continue;
 			}
 
-			float imageX = (j - width_ / 2) / (width_ * 0.5f);
-			float imageY = (height_ / 2 - i) / (height_ * 0.5f);
+			float imageX = j;
+			float imageY = i;
 			float imageZ = 1;
 
 
 			cv::Vec3f projectedVector(imageX, imageY, imageZ);
 
-			cv::Mat projectedPoint = projectionMat.colRange(0, 3) * cv::Mat(projectedVector);
+			cv::Mat projectedPoint = cameraIntrinsic * cv::Mat(projectedVector);
 
-			projectedPoint = (projectedPoint - cameraPos) * depthMat.at<float>(i,j);
+			projectedPoint =  pointDepth * projectedPoint;
 
-			cv::multiply(projectedPoint.col(0), 1.0f / magnitude(projectedPoint), projectedPoint.col(0));
+            projectedPoint = tcwMat.rowRange(0,3).colRange(0,3) * projectedPoint;
 
-			projectedPoint *= depthMat.at<float>(i,j);
+            projectedPoint = projectedPoint + tcwMat.rowRange(0,3).col(3);
 
 			//cout << projectedPoint << endl;
 
 			string insideBlock = convert(projectedPoint);
+
+            if (blocks.find(insideBlock) == blocks.end()) {
+                cout << "NEW POINT " << pointDepth << endl;
+            }
 
 			blocks.insert(insideBlock);
 
@@ -115,7 +123,7 @@ int main(int argc, char **argv) {
 
 
     stat(folderPath.c_str(), &info);
-    if( info.st_mode & S_IFDIR ){
+    if( info.st_mode & S_IFDIR ){https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_core/py_basic_ops/py_basic_ops.html
         cout << folderPath << " is a directory" << endl;
     }
     else{
@@ -147,6 +155,8 @@ int main(int argc, char **argv) {
     float Karr[3][3] = {{fx_, 0, cx_}, {0, fy_, cy_}, {0, 0, 1}};
     cv::Mat K(3, 3, CV_32F, Karr);
 
+    K = K.inv();
+
     int empty = 0;
     int frame = 1;
     cv::Mat RGBMat;
@@ -177,27 +187,10 @@ int main(int argc, char **argv) {
     	cv::FileStorage fs2(tcwPath + to_string(frame) + ".xml", cv::FileStorage::READ);
     	fs2["tcw"] >> tcwMat;
 
-    	//cout << tcwMat << endl;
-
-
-    	cv::Mat projectionMat;
-    	cv::Mat projectionMatOne = (K * tcwMat.rowRange(0,3));
-    	cv::Mat projectionMatInv = projectionMatOne.colRange(0,3).inv();
-    	cv::hconcat(projectionMatInv, projectionMatOne.col(3), projectionMat);
-
-    	cv::Mat cameraPos = tcwMat.rowRange(0,3).colRange(0,3).t()*-1.f*tcwMat.rowRange(0,3).col(3);
-
 
     	empty = 0;
 
-
-    	/*cv::namedWindow("Display window", cv::WINDOW_AUTOSIZE);
-    	cv::imshow("Display window", depthMat);
-
-    	cv::waitKey(0);*/
-
-
-    	set<string> blocks = categorize(RGBMat, depthMat, projectionMat, cameraPos, frame);
+    	set<string> blocks = categorize(depthMat, K, tcwMat);
 
     	
     	for (string block : blocks) {
