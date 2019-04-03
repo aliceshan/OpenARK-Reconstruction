@@ -428,9 +428,6 @@ namespace ark {
         void SavePLY(std::string filename);
 
         __host__
-        void clearMemory();
-
-        __host__
         std::vector<Vertex>* getVertices();
 
         __host__

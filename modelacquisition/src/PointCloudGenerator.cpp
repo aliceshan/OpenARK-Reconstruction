@@ -201,7 +201,7 @@ namespace ark {
     }
 
     void PointCloudGenerator::ClearTSDF() {
-        mpGpuTsdfGenerator->clearMemory();
+        mpGpuTsdfGenerator->Shutdown();
     }
 }
 

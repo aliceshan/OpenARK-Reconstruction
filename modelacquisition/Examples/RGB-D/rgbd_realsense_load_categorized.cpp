@@ -235,6 +235,11 @@ void application_thread() {
         pointCloudGenerator->Start();
 
         set<string> frames = getFiles(directoryName + origin + "/RGB/");
+
+        if (frames.size() < 3) {
+            continue;
+        }
+
         set<int> tframes;
         for (string frameC: frames) {
             int tframe_ = atoi(frameC.substr(0, frameC.find(".")).c_str());

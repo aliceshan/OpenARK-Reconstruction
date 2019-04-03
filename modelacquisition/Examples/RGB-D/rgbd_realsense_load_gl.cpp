@@ -204,7 +204,7 @@ void application_thread() {
     int empty = 0;
     while (true) {
 
-        if(empty == 5)
+        if(empty == 10)
             break;
 
         ark::RGBDFrame frame = saveFrame->frameLoad(tframe);
@@ -328,7 +328,7 @@ int main(int argc, char **argv) {
     (void) glutCreateWindow("GLUT Program");
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    pointCloudGenerator = new ark::PointCloudGenerator(argv[2], -4, 0, -2);
+    pointCloudGenerator = new ark::PointCloudGenerator(argv[2], 0, -6, -6);
 //    slam = new ark::ORBSLAMSystem(argv[1], argv[2], ark::ORBSLAMSystem::RGBD, true);
 //    bridgeRSD435 = new BridgeRSD435();
     std::cout << "here" << std::endl;

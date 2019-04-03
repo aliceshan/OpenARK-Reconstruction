@@ -13,10 +13,11 @@
 #Camera.cx: 321.853 #328.856
 #Camera.cy: 245.121 #237.814
 
-Camera.fx: 643.00 #618.665
-Camera.fy: 643.00 #618.76
-Camera.cx: 328.856 #629.00 moved these back to original from old yaml
-Camera.cy: 237.814 #405.00
+#d435i
+Camera.fx: 387.003 
+Camera.fy: 387.003 
+Camera.cx: 321.636 
+Camera.cy: 236.366 
 
 
 #Disortion parameters: these are the same regardless of the camera resolution used
