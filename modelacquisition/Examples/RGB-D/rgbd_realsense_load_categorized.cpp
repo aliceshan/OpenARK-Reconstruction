@@ -1,3 +1,11 @@
+/*
+Offline version of 3D reconstruction with categorization
+- Loads categorized key frames
+- 3D dense model reconstruction through TSDF 
+- Supports much larger and accurate reconstruction space than the uncatergorizaed offline version
+- Camera calibration file required
+*/
+
 #include <iostream>
 #include <algorithm>
 #include <thread>
@@ -16,8 +24,6 @@
 #include <opencv2/opencv.hpp>
 
 #include <SaveFrame.h>
-//#include <ORBSLAMSystem.h>
-//#include <BridgeRSD435.h>
 #include <PointCloudGenerator.h>
 
 //OpenGL global variable
@@ -36,15 +42,11 @@ float yRotLength = 0.0f;
 bool wireframe = false;
 bool stop = false;
 
-//ark::ORBSLAMSystem *slam;
-//BridgeRSD435 *bridgeRSD435;
 std::thread *app;
 std::string settingsFile;
 std::string directoryName;
 
 using namespace std;
-
-
 
 void draw_box(float ox, float oy, float oz, float width, float height, float length) {
     glLineWidth(1.0f);
@@ -146,8 +148,6 @@ void display_func() {
     glRotatef(xRot, 1.0f, 0.0f, 0.0f);
     glRotatef(yRot, 0.0f, 1.0f, 0.0f);
 
-    //pointCloudGenerator->Render();
-
     draw_origin(4.f);
 
     glPopMatrix();
@@ -227,10 +227,11 @@ void application_thread() {
 
         vector<float> originF = getOrigin(origin);
         
+        // Create saveFrame. It loads from timestamp, RGB image, depth image folders to retrieve key frames in the current block
         ark::SaveFrame *saveFrame = new ark::SaveFrame(directoryName + origin + "/");
+        // Create pointCloudGenerator (TSDF). It initializes all system threads and gets ready to process frames (RBG and Depth).
         ark::PointCloudGenerator *pointCloudGenerator = new ark::PointCloudGenerator(settingsFile, 
             originF.at(0), originF.at(1), originF.at(2));
-        //ark::PointCloudGenerator *pointCloudGenerator = new ark::PointCloudGenerator(settingsFile, -6, -6, 0);
 
         pointCloudGenerator->Start();
 
@@ -259,18 +260,12 @@ void application_thread() {
         }
 
         pointCloudGenerator->RequestStop();
+        // Save the model in the current clock in a ply file
         pointCloudGenerator->SavePly();
         pointCloudGenerator->ClearTSDF();
         delete pointCloudGenerator;
         delete saveFrame;
     }
-
-//    slam->Start();
-    
-//    bridgeRSD435->Start();
-
-    // Main loop
-    
 }
 
 void keyboard_func(unsigned char key, int x, int y) {
@@ -278,10 +273,6 @@ void keyboard_func(unsigned char key, int x, int y) {
         if (!stop) {
             app = new thread(application_thread);
             stop = !stop;
-        } else {
-//            slam->RequestStop();
-            //pointCloudGenerator->RequestStop();
-//            bridgeRSD435->Stop();
         }
     }
 
@@ -310,11 +301,7 @@ void keyboard_func(unsigned char key, int x, int y) {
     }
 
     if (key == 'p') {
-//        slam->RequestStop();
-        //pointCloudGenerator->RequestStop();
-//        bridgeRSD435->Stop();
 
-        //pointCloudGenerator->SavePly("model.ply");
     }
 
     if (key == 'v')
@@ -359,46 +346,14 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    /*
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
-    glutInitWindowSize(window_width, window_height);
-    (void) glutCreateWindow("GLUT Program");
-    */
-
-    // Create SLAM system. It initializes all system threads and gets ready to process frames.
     settingsFile = argv[2];
 
-//    slam = new ark::ORBSLAMSystem(argv[1], argv[2], ark::ORBSLAMSystem::RGBD, true);
-//    bridgeRSD435 = new BridgeRSD435();
-    
     directoryName = argv[1];
     directoryName += "/frames_categorized/";
 
-    
-//    slam->AddKeyFrameAvailableHandler([pointCloudGenerator](const ark::RGBDFrame &keyFrame) {
-//        return pointCloudGenerator->OnKeyFrameAvailable(keyFrame);
-//    }, "PointCloudFusion");
-
-    /*init();
-
-    glutSetWindowTitle("OpenARK 3D Reconstruction");
-
-    glutDisplayFunc(display_func);
-    glutReshapeFunc(reshape_func);
-    glutIdleFunc(idle_func);
-    glutMouseFunc(mouse_func);
-    glutMotionFunc(motion_func);
-    glutKeyboardFunc(keyboard_func);
-    glutMainLoop();
-    */
-
+    // Main loop
     application_thread();
 
-    
-//    delete slam;
-//    delete bridgeRSD435;
     delete app;
-
     return EXIT_SUCCESS;
 }

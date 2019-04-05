@@ -1,3 +1,11 @@
+/*
+Online version of 3D reconstruction
+- Intel realsense D435 sensor integration
+- Camera pose estimation using ORBSLAM
+- Real-time coarse mesh model generation using TSDF, and visualization through OpenGL tools 
+- Key frames are saved into seperate folders (timestamps, RGB images, Depth images) for offline reconstruction. 
+*/
+
 #include <iostream>
 #include <algorithm>
 #include <thread>
@@ -180,11 +188,6 @@ void application_thread() {
         bridgeRSD435->GrabRGBDPair(imBGR, imD);
 
         cv::cvtColor(imBGR, imRGB, cv::COLOR_BGR2RGB);
-        // imwrite("imRGB.png",imRGB);
-        // imwrite("imD.png",imD);
-        // std::cout<<"RGB"<<imRGB.cols << "," <<imRGB.rows << "," <<imRGB.type()<<endl;
-        // std::cout<<"D"<<imD.cols << "," <<imD.rows << "," <<imD.type()<<endl;
-        // cv::waitKey(0);
         // Pass the image to the SLAM system
         slam->PushFrame(imRGB, imD, tframe);
     }
@@ -281,16 +284,25 @@ int main(int argc, char **argv) {
     glutInitWindowSize(window_width, window_height);
     (void) glutCreateWindow("GLUT Program");
 
-    // Create SLAM system. It initializes all system threads and gets ready to process frames.
+    
+    // Create pointCloudGenerator (GPU TSDF generater created), initiate timestamp and status
     pointCloudGenerator = new ark::PointCloudGenerator(argv[2]);
+
+    // Create SLAM system. It initializes all system threads and gets ready to process frames.
     slam = new ark::ORBSLAMSystem(argv[1], argv[2], ark::ORBSLAMSystem::RGBD, true);
+
+    // Create camera class instance
     bridgeRSD435 = new BridgeRSD435();
+
+    // Create saveFrame. It stores key frames into timestamp, RGB image, depth image folders
     saveFrame = new ark::SaveFrame("./frames/");
 
+    // Update key frame to TSDF in callback
     slam->AddKeyFrameAvailableHandler([pointCloudGenerator](const ark::RGBDFrame &keyFrame) {
         return pointCloudGenerator->OnKeyFrameAvailable(keyFrame);
     }, "PointCloudFusion");
 
+    // Save key frame in callback
     slam->AddKeyFrameAvailableHandler([saveFrame](const ark::RGBDFrame &keyFrame) {
         return saveFrame->frameWrite(keyFrame);
     }, "SaveFrame");

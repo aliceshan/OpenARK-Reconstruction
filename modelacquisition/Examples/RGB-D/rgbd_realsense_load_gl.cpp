@@ -1,7 +1,13 @@
+/*
+Offline version of 3D reconstruction
+- Loads key frames from the online 3D reconstruction module
+- 3D dense model reconstruction through TSDF 
+- Camera calibration file required
+*/
+
 #include <iostream>
 #include <algorithm>
 #include <thread>
-
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -14,8 +20,6 @@
 #include <opencv2/opencv.hpp>
 
 #include <SaveFrame.h>
-//#include <ORBSLAMSystem.h>
-//#include <BridgeRSD435.h>
 #include <PointCloudGenerator.h>
 
 //OpenGL global variable
@@ -35,14 +39,10 @@ bool wireframe = false;
 bool stop = false;
 
 ark::PointCloudGenerator *pointCloudGenerator;
-//ark::ORBSLAMSystem *slam;
-//BridgeRSD435 *bridgeRSD435;
 ark::SaveFrame *saveFrame;
 std::thread *app;
 
 using namespace std;
-
-
 
 void draw_box(float ox, float oy, float oz, float width, float height, float length) {
     glLineWidth(1.0f);
@@ -195,11 +195,9 @@ int countFiles(string filename){
 
 
 void application_thread() {
-//    slam->Start();
     pointCloudGenerator->Start();
-//    bridgeRSD435->Start();
 
-    // Main loop
+    // Main loop, loads key frames
     int tframe = 0;
     int empty = 0;
     while (true) {
@@ -214,20 +212,7 @@ void application_thread() {
             empty ++;
             continue;
         }
-        // imshow("imRGB",imRGB);
 
-//        string imgname = "imD"+ to_string(tframe) + ".png";
-//
-//        imwrite(imgname,imD);
-
-//        cv::imshow("Depth Map", imD);
-//        cv::imshow("RGB Map", imRGB);
-
-        // std::cout<<"RGB"<<imRGB.cols << "," <<imRGB.rows << "," <<imRGB.type()<<endl;
-        // std::cout<<"D"<<imD.cols << "," <<imD.rows << "," <<imD.type()<<endl;
-         // cv::waitKey(10);
-        // Pass the image to the SLAM system
-//        slam->PushFrame(imRGB, imD, tframe);
         cv::cvtColor(frame.imRGB, frame.imRGB, cv::COLOR_BGR2RGB);
 
         pointCloudGenerator->OnKeyFrameAvailable(frame);
@@ -242,9 +227,7 @@ void keyboard_func(unsigned char key, int x, int y) {
             app = new thread(application_thread);
             stop = !stop;
         } else {
-//            slam->RequestStop();
             pointCloudGenerator->RequestStop();
-//            bridgeRSD435->Stop();
         }
     }
 
@@ -272,17 +255,14 @@ void keyboard_func(unsigned char key, int x, int y) {
         yTrans += 0.3f;
     }
 
+    // Save the most updated model in a ply file
     if (key == 'p') {
-//        slam->RequestStop();
         pointCloudGenerator->RequestStop();
-//        bridgeRSD435->Stop();
-
         pointCloudGenerator->SavePly();
     }
 
     if (key == 'v')
         wireframe = !wireframe;
-
 
     glutPostRedisplay();
 }
@@ -327,17 +307,10 @@ int main(int argc, char **argv) {
     glutInitWindowSize(window_width, window_height);
     (void) glutCreateWindow("GLUT Program");
 
-    // Create SLAM system. It initializes all system threads and gets ready to process frames.
+    // Create pointCloudGenerator (TSDF). It initializes all system threads and gets ready to process frames (RBG and Depth).
     pointCloudGenerator = new ark::PointCloudGenerator(argv[2], 0, -6, -6);
-//    slam = new ark::ORBSLAMSystem(argv[1], argv[2], ark::ORBSLAMSystem::RGBD, true);
-//    bridgeRSD435 = new BridgeRSD435();
-    std::cout << "here" << std::endl;
+    // Create saveFrame. It loads from timestamp, RGB image, depth image folders to retrieve key frames
     saveFrame = new ark::SaveFrame("./frames/");
-    std::cout << "here" << std::endl;
-
-//    slam->AddKeyFrameAvailableHandler([pointCloudGenerator](const ark::RGBDFrame &keyFrame) {
-//        return pointCloudGenerator->OnKeyFrameAvailable(keyFrame);
-//    }, "PointCloudFusion");
 
     init();
 
@@ -351,8 +324,6 @@ int main(int argc, char **argv) {
     glutMainLoop();
 
     delete pointCloudGenerator;
-//    delete slam;
-//    delete bridgeRSD435;
     delete saveFrame;
     delete app;
 
