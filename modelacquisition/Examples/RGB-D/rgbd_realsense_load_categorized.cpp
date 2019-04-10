@@ -1,4 +1,5 @@
 /*
+Adam
 Offline version of 3D reconstruction with categorization
 - Loads categorized key frames
 - 3D dense model reconstruction through TSDF 

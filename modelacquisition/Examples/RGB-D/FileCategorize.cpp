@@ -92,13 +92,7 @@ set<string> categorize(cv::Mat depthMat, cv::Mat cameraIntrinsic, cv::Mat tcwMat
 
             projectedPoint = projectedPoint + tcwMat.rowRange(0,3).col(3);
 
-			//cout << projectedPoint << endl;
-
 			string insideBlock = convert(projectedPoint);
-
-            if (blocks.find(insideBlock) == blocks.end()) {
-                cout << "NEW POINT " << pointDepth << endl;
-            }
 
 			blocks.insert(insideBlock);
 
@@ -112,6 +106,38 @@ set<string> categorize(cv::Mat depthMat, cv::Mat cameraIntrinsic, cv::Mat tcwMat
 }
 
 
+//Write frames to folders given set of reconstruction blocks
+void write_to_folders(set<string> blocks, cv::Mat RGBMat, cv::Mat depthMat, cv::Mat tcwMat, int frame) {
+
+    for (string block : blocks) {
+        cout << "block to assign: " << block << endl;
+
+        string pathAssign = folderPath + "/frames_categorized/" + block + "/";
+        string rgbPathAssign = pathAssign + "RGB/";
+        string depthPathAssign = pathAssign + "depth/";
+        string tcwPathAssign = pathAssign + "tcw/";
+
+        createFolder(pathAssign);
+        createFolder(rgbPathAssign);
+        createFolder(depthPathAssign);
+        createFolder(tcwPathAssign);
+
+
+
+        cv::imwrite(rgbPathAssign + std::to_string(frame) + ".png", RGBMat);
+
+        cv::Mat depth255;
+        depthMat.convertTo(depth255, CV_16UC1, 1000);
+
+        cv::imwrite(depthPathAssign + std::to_string(frame) + ".png", depth255);
+
+        cv::FileStorage fs(tcwPathAssign + std::to_string(frame)+".xml",cv::FileStorage::WRITE);
+        fs << "tcw" << tcwMat;
+        fs.release();
+
+
+    }
+}
 
 
 int main(int argc, char **argv) {
@@ -134,12 +160,7 @@ int main(int argc, char **argv) {
         cout << folderPath << " is not a valid directory" << endl;
         return 0;
     }
-
-
     createFolder(folderPath + "/frames_categorized/");
-
-
-
 
     string strSettingsFile = argv[2];
 
@@ -155,6 +176,8 @@ int main(int argc, char **argv) {
     int voxDim = fSettings["Voxel.Dim.x"];
 
     blockSize = voxSize * voxDim;
+
+
 
 
 
@@ -190,45 +213,19 @@ int main(int argc, char **argv) {
     	} 
 
     	cout << "calculating frame: " << frame << endl;
+        empty = 0;
 
+
+        //Obtain tcw from .xml
 
     	cv::FileStorage fs2(tcwPath + to_string(frame) + ".xml", cv::FileStorage::READ);
     	fs2["tcw"] >> tcwMat;
 
 
-    	empty = 0;
-
     	set<string> blocks = categorize(depthMat, K, tcwMat);
 
+        write_to_folders(blocks, RGBMat, depthMat, tcwMat, frame);
     	
-    	for (string block : blocks) {
-    		cout << "block to assign: " << block << endl;
-
-    		string pathAssign = folderPath + "/frames_categorized/" + block + "/";
-    		string rgbPathAssign = pathAssign + "RGB/";
-    		string depthPathAssign = pathAssign + "depth/";
-    		string tcwPathAssign = pathAssign + "tcw/";
-
-    		createFolder(pathAssign);
-    		createFolder(rgbPathAssign);
-    		createFolder(depthPathAssign);
-    		createFolder(tcwPathAssign);
-
-
-
-    		cv::imwrite(rgbPathAssign + std::to_string(frame) + ".png", RGBMat);
-
-    		cv::Mat depth255;
-    		depthMat.convertTo(depth255, CV_16UC1, 1000);
-
-    		cv::imwrite(depthPathAssign + std::to_string(frame) + ".png", depth255);
-
-    		cv::FileStorage fs(tcwPathAssign + std::to_string(frame)+".xml",cv::FileStorage::WRITE);
-    		fs << "tcw" << tcwMat;
-    		fs.release();
-
-
-    	}
 
     	frame++;
 

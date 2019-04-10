@@ -17,31 +17,15 @@ namespace ark{
     public:
         SaveFrame(std::string folderPath);
 
-        void Start();
-
-        void RequestStop();
-
-        bool IsRunning();
-
         void OnKeyFrameAvailable(const RGBDFrame &keyFrame);
 
         void OnFrameAvailable(const RGBDFrame &frame);
-
-        void OnLoopClosureDetected();
-
-        void Run();
 
         void frameWrite(const RGBDFrame &frame);
 
         ark::RGBDFrame frameLoad(int frameId);
 
-//        RGBDFrame loadFrame();
-
-//        void Render();
-
     private:
-
-//        void Reproject(const cv::Mat &imRGB,const cv::Mat &imD, const cv::Mat &Twc);
 
         //Main Loop thread
         std::thread *mptRun;
@@ -51,8 +35,6 @@ namespace ark{
         std::string tcwPath;
         std::string depth_to_tcw_Path;
 
-//        //TSDF Generator
-//        GpuTsdfGenerator *mpGpuTsdfGenerator;
 
         //RGBDFrame Map
         std::map<int, ark::RGBDFrame> mMapRGBDFrame;
@@ -69,11 +51,6 @@ namespace ark{
         std::mutex mRequestStopMutex;
         bool mbRequestStop;
 
-//        //Camera params
-//        float fx_, fy_, cx_, cy_;
-//        float maxdepth_;
-//        int width_, height_;
-//        float depthfactor_;
     };
 }
 

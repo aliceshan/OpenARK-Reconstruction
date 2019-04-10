@@ -180,7 +180,7 @@ int countFiles(string filename){
     dp = opendir (filename.c_str());
 
     if (dp != NULL) {
-        while (ep = readdir (dp)) {
+        while ((ep = readdir (dp))) {
             i++;
         }
         (void) closedir (dp);

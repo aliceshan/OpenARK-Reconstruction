@@ -1,6 +1,13 @@
 //
 // Created by yiwen on 2/2/19.
 //
+/*
+- Enables online frame writing to folder for offline reconstruction later
+- Enables offline file access
+- Requires onKeyFrameAvailable handler in SLAM
+- Used in rgbd_realsense_d435, rgbd_realsense_load_gl, rgbd_realsense_load_categorized
+
+*/
 
 #include <chrono>
 #include <mutex>
@@ -52,46 +59,6 @@ namespace ark {
         mbRequestStop = false;
     }
 
-    void SaveFrame::Start() {
-        mptRun = new std::thread(&SaveFrame::Run, this);
-    }
-
-
-    void SaveFrame::RequestStop() {
-        std::unique_lock<std::mutex> lock(mRequestStopMutex);
-        mbRequestStop = true;
-    }
-
-    bool SaveFrame::IsRunning() {
-        std::unique_lock<std::mutex> lock(mRequestStopMutex);
-        return mbRequestStop;
-    }
-
-    void SaveFrame::Run() {
-//        ark::RGBDFrame currentKeyFrame;
-//        while (true) {
-//            {
-//                std::unique_lock<std::mutex> lock(mRequestStopMutex);
-//                if (mbRequestStop)
-//                    break;
-//            }
-//
-//
-//            {
-//                std::unique_lock<std::mutex> lock(mKeyFrameMutex);
-//                if (currentKeyFrame.frameId == mKeyFrame.frameId)
-//                    continue;
-//                mKeyFrame.imDepth.copyTo(currentKeyFrame.imDepth);
-//                mKeyFrame.imRGB.copyTo(currentKeyFrame.imRGB);
-//                mKeyFrame.mTcw.copyTo(currentKeyFrame.mTcw);
-//                currentKeyFrame.frameId = mKeyFrame.frameId;
-//            }
-//
-//            cv::Mat Twc = mKeyFrame.mTcw.inv();
-//
-////            Reproject(currentKeyFrame.imRGB, currentKeyFrame.imDepth, Twc);
-//        }
-    }
 
     void SaveFrame::OnKeyFrameAvailable(const RGBDFrame &keyFrame) {
         if (mMapRGBDFrame.find(keyFrame.frameId) != mMapRGBDFrame.end())
@@ -110,10 +77,6 @@ namespace ark {
         std::cout << "OnFrameAvailable" << frame.frameId << std::endl;
     }
 
-    void SaveFrame::OnLoopClosureDetected() {
-        std::cout << "LoopClosureDetected" << std::endl;
-    }
-
     void SaveFrame::frameWrite(const RGBDFrame &frame){
         if (mMapRGBDFrame.find(frame.frameId) != mMapRGBDFrame.end())
             return;
@@ -122,13 +85,11 @@ namespace ark {
         if(frame.frameId > 300)
             return;
 
-//        std::unique_lock<std::mutex> lock(mKeyFrameMutex);
         cv::Mat imBGR;
         cv::cvtColor(frame.imRGB, imBGR, CV_RGB2BGR);
         cv::imwrite(rgbPath + std::to_string(frame.frameId) + ".png", imBGR);
 
         cv::Mat depth255;
-        //cv::normalize(frame.imDepth, depth255, 0, 1000, cv::NORM_MINMAX, CV_16UC1); ////cast to 16
 
         
         frame.imDepth.convertTo(depth255, CV_16UC1, 1000);
@@ -139,6 +100,8 @@ namespace ark {
         //fs << "depth" << frame.imDepth ;
         fs.release();
 
+
+        //RGB and Depth to .xml (.png preferable)
         /*
         cv::FileStorage fs2(depth_to_tcw_Path + std::to_string(frame.frameId)+".xml",cv::FileStorage::WRITE);
         fs2 << "depth" << depth255;
@@ -152,9 +115,7 @@ namespace ark {
 
     RGBDFrame SaveFrame::frameLoad(int frameId){
         std::cout<<"frameLoad frame = "<<frameId<<std::endl;
-//        if(frameId > 300)
-//            return;
-        // std::unique_lock<std::mutex> lock(mKeyFrameMutex);
+
         RGBDFrame frame;
 
         frame.frameId = frameId;
@@ -172,16 +133,12 @@ namespace ark {
         rgbBig.release();
  
         cv::Mat depth255 = cv::imread(depthPath + std::to_string(frame.frameId) + ".png",-1);
-        //std::cout << "type: " << depth255.type() << std::endl ;
-        //if(frame.frameId == 1)
-        //	std::cout << "depth255 = "<< std::endl << " "  << depth255 << std::endl << std::endl;
 
         depth255.convertTo(frame.imDepth, CV_32FC1);
 
         depth255.release();
 
         frame.imDepth *= 0.001;
-        //cv::normalize(depth255, frame.imDepth, 0.2, 10, cv::NORM_MINMAX, CV_32F);
         
 
 
@@ -189,8 +146,6 @@ namespace ark {
         
         cv::FileStorage fs2(tcwPath + std::to_string(frame.frameId)+".xml", cv::FileStorage::READ);
         fs2["tcw"] >> frame.mTcw;
-        
-        //fs2["depth"] >> frame.imDepth;
         fs2.release();
         
 
@@ -208,15 +163,6 @@ namespace ark {
         cv::Mat tcw(4, 4, CV_32FC1, tcwArr);    
         frame.mTcw = tcw.inv();
         */
-
-
-
-
-        //std::cout << "debugging frame#: " << frame.frameId << std::endl; 
-        //std::cout << tcw << std::endl;
-        //std::cout << frame.imRGB.rows << std::endl;
-        //std::cout << frame.imDepth << std::endl;
-        //std::cout << frame.imDepth.rows << std::endl;
 
         return frame;
     }
