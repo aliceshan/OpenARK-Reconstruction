@@ -1,4 +1,11 @@
-//r*(d*(K^-1)*<x,y,1>) + T
+/*
+Adam 
+Categorizes frames into reconstruction blocks using 2D-3D projection
+Requires RGB, Depth, and tcw frames
+RGB: /frames/RGB/
+Depth: /frames/depth/
+TCW: /frames/tcw/
+*/
 
 
 #include <iostream>
@@ -12,26 +19,17 @@ using namespace std;
 string folderPath, rgbPath, depthPath, tcwPath;
 float blockSize; //size of reconstruction section size (meters)
 float maxAccurateDistance = 10; //based on camera limits to exclude noisy measurements (meters)
-int width_, height_;
+int width_, height_; //camera paramaters, obtained from .yaml
 
 
 struct stat info;
 
+
+
+// Creates folders using <sys/stat.h>
+
 void createFolder(std::string folderPath){
 
-	/*
-    if(stat(folderPath.c_str(), &info) != 0 ) {
-        if (-1 == mkdir(folderPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH))
-        {
-            std::cout<< "Error creating directory "<< folderPath<<" !" << std::endl;
-            exit(1);
-        }
-        std::cout << folderPath << " is created" << folderPath << std::endl;
-    }else if( info.st_mode & S_IFDIR )  // S_ISDIR() doesn't exist on my windows
-        std::cout<<folderPath<<" is a directory"<<std::endl;
-    else
-        std::cout<<folderPath<<" is no directory"<<std::endl;
-        */
 	if( stat(folderPath.c_str(), &info) != 0){
 		cout <<"creating folder: " << folderPath << endl;
         if (-1 == mkdir(folderPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH))
@@ -40,11 +38,10 @@ void createFolder(std::string folderPath){
             exit(1);
         }
     }
-    else{
-    	//cout << folderPath << " already exists" << endl;
-    }
 }
 
+
+//Converts an <x,y,z> cv::Mat to a string formatted "x_y_z"
 
 string convert(cv::Mat point) {
 	string x = to_string((int)(floor(point.at<float>(0) / blockSize) * blockSize));
@@ -53,6 +50,9 @@ string convert(cv::Mat point) {
 	return x + "_" + y + "_" + z;
 }
 
+
+//Returns magnitude of a vector
+
 float magnitude(cv::Mat vectorPoint) {
 	float x = 0;
 	for (int i = 0; i < vectorPoint.rows; i++) {
@@ -60,6 +60,9 @@ float magnitude(cv::Mat vectorPoint) {
 	}
 	return sqrt(x);
 }
+
+
+//Finds reconstruction blocks of any given image using 2D-3D Projection
 
 set<string> categorize(cv::Mat depthMat, cv::Mat cameraIntrinsic, cv::Mat tcwMat) {
 
@@ -110,6 +113,7 @@ set<string> categorize(cv::Mat depthMat, cv::Mat cameraIntrinsic, cv::Mat tcwMat
 
 
 
+
 int main(int argc, char **argv) {
 	if (argc != 3) {
         cerr << endl << "Usage: ./FileCategorize path_to_frames settings_file" << endl;
@@ -123,7 +127,7 @@ int main(int argc, char **argv) {
 
 
     stat(folderPath.c_str(), &info);
-    if( info.st_mode & S_IFDIR ){https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_core/py_basic_ops/py_basic_ops.html
+    if( info.st_mode & S_IFDIR ){
         cout << folderPath << " is a directory" << endl;
     }
     else{
@@ -133,6 +137,8 @@ int main(int argc, char **argv) {
 
 
     createFolder(folderPath + "/frames_categorized/");
+
+
 
 
     string strSettingsFile = argv[2];
@@ -164,6 +170,8 @@ int main(int argc, char **argv) {
     cv::Mat tcwMat;
 
 
+    //Main loop, currently geared towards .png for RGB and Depth, .xml for tcw
+
     while (true) {
     	RGBMat = cv::imread(rgbPath + std::to_string(frame) + ".png",cv::IMREAD_COLOR);
     	depthMat = cv::imread(depthPath + to_string(frame) + ".png", -1);
@@ -175,7 +183,7 @@ int main(int argc, char **argv) {
     		cout << "no image found at frame_id: " << frame << endl;
     		empty++;
     		frame++;
-    		if (empty > 6) {
+    		if (empty > 10) {
     			break;
     		}
     		continue;

@@ -275,7 +275,7 @@ void motion_func(int x, int y) {
 
 int main(int argc, char **argv) {
     if (argc != 3) {
-        cerr << endl << "Usage: ./rgbd_realsense path_to_vocabulary path_to_settings" << endl;
+        cerr << endl << "Usage: ./rgbd_realsense_d435 path_to_vocabulary path_to_settings" << endl;
         return 1;
     }
 

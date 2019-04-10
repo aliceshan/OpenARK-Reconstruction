@@ -3,6 +3,7 @@ Offline version of 3D reconstruction
 - Loads key frames from the online 3D reconstruction module
 - 3D dense model reconstruction through TSDF 
 - Camera calibration file required
+- Supports GL
 */
 
 #include <iostream>
@@ -298,7 +299,7 @@ void motion_func(int x, int y) {
 
 int main(int argc, char **argv) {
     if (argc != 3) {
-        cerr << endl << "Usage: ./rgbd_realsense path_to_vocabulary path_to_settings" << endl;
+        cerr << endl << "Usage: ./rgbd_realsense_load path_to_frames path_to_settings" << endl;
         return 1;
     }
 
@@ -310,7 +311,7 @@ int main(int argc, char **argv) {
     // Create pointCloudGenerator (TSDF). It initializes all system threads and gets ready to process frames (RBG and Depth).
     pointCloudGenerator = new ark::PointCloudGenerator(argv[2], 0, -6, -6);
     // Create saveFrame. It loads from timestamp, RGB image, depth image folders to retrieve key frames
-    saveFrame = new ark::SaveFrame("./frames/");
+    saveFrame = new ark::SaveFrame(argv[1]);
 
     init();
 
