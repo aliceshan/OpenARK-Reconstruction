@@ -47,6 +47,8 @@ namespace ark {
 
         void Start();
 
+        ORB_SLAM2::Map* getMap();
+
         void RequestStop();
 
         void ShutDown();

@@ -40,8 +40,11 @@ namespace ark {
             std::cout<<folderPath<<" is no directory"<<std::endl;
     }
 
+    int counter;
+
     SaveFrame::SaveFrame(std::string folderPath) {
 
+        counter = 1;
 
         struct stat info;
 
@@ -79,26 +82,30 @@ namespace ark {
 
     void SaveFrame::frameWrite(const RGBDFrame &frame){
         if (mMapRGBDFrame.find(frame.frameId) != mMapRGBDFrame.end())
-            return;
+            return; 
 
-        std::cout<<"frameWrite frame = "<<frame.frameId<<std::endl;
-        if(frame.frameId > 300)
-            return;
+        std::cout<<"frameWrite frame = "<< counter <<std::endl;
 
         cv::Mat imBGR;
         cv::cvtColor(frame.imRGB, imBGR, CV_RGB2BGR);
-        cv::imwrite(rgbPath + std::to_string(frame.frameId) + ".png", imBGR);
+        cv::imwrite(rgbPath + std::to_string(counter) + ".png", imBGR);
 
         cv::Mat depth255;
 
         
         frame.imDepth.convertTo(depth255, CV_16UC1, 1000);
-        cv::imwrite(depthPath + std::to_string(frame.frameId) + ".png", depth255);
+        cv::imwrite(depthPath + std::to_string(counter) + ".png", depth255);
 
-        cv::FileStorage fs(tcwPath + std::to_string(frame.frameId)+".xml",cv::FileStorage::WRITE);
-        fs << "tcw" << frame.mTcw ;
+
+        cv::FileStorage fs(tcwPath + std::to_string(counter)+".xml",cv::FileStorage::WRITE);
+        fs << "tcw" << frame.mTcw;
         //fs << "depth" << frame.imDepth ;
         fs.release();
+
+        std::cout << "finished writing " << counter << std::endl;
+
+
+        counter++;
 
 
         //RGB and Depth to .xml (.png preferable)
@@ -121,16 +128,16 @@ namespace ark {
         frame.frameId = frameId;
 
 
-        cv::Mat rgbBig = cv::imread(rgbPath + std::to_string(frame.frameId) + ".png",cv::IMREAD_COLOR);
+        frame.imRGB = cv::imread(rgbPath + std::to_string(frame.frameId) + ".png",cv::IMREAD_COLOR);
 
-        if(rgbBig.rows == 0){
+        if(frame.imRGB.rows == 0){
             frame.frameId = -1;
             return frame;
         }
 
-        cv::resize(rgbBig, frame.imRGB, cv::Size(640,480));
+        //cv::resize(rgbBig, frame.imRGB, cv::Size(640,480));
 
-        rgbBig.release();
+        //rgbBig.release();
  
         cv::Mat depth255 = cv::imread(depthPath + std::to_string(frame.frameId) + ".png",-1);
 

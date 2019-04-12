@@ -44,9 +44,9 @@ void createFolder(std::string folderPath){
 //Converts an <x,y,z> cv::Mat to a string formatted "x_y_z"
 
 string convert(cv::Mat point) {
-	string x = to_string((int)(floor(point.at<float>(0) / blockSize) * blockSize));
-	string y = to_string((int)(floor(point.at<float>(1) / blockSize) * blockSize));
-	string z = to_string((int)(floor(point.at<float>(2) / blockSize) * blockSize));
+	string x = to_string((int)(floor((point.at<float>(0) - 3.) / blockSize) * blockSize + 3));
+	string y = to_string((int)(floor((point.at<float>(1) - 3.) / blockSize) * blockSize + 3));
+	string z = to_string((int)(floor((point.at<float>(2) - 3.) / blockSize) * blockSize + 3));
 	return x + "_" + y + "_" + z;
 }
 
@@ -212,15 +212,29 @@ int main(int argc, char **argv) {
     		continue;
     	} 
 
+
     	cout << "calculating frame: " << frame << endl;
         empty = 0;
 
 
         //Obtain tcw from .xml
-
+        
     	cv::FileStorage fs2(tcwPath + to_string(frame) + ".xml", cv::FileStorage::READ);
     	fs2["tcw"] >> tcwMat;
-
+        
+        /*
+        float tcwArr[4][4];
+        std::ifstream tcwFile;
+        tcwFile.open(tcwPath + std::to_string(frame) + ".txt");
+        for (int i = 0; i < 4; ++i) {
+            for (int k = 0; k < 4; ++k) {
+                tcwFile >> tcwArr[i][k];
+            }
+        }
+        cv::Mat tcw(4, 4, CV_32FC1, tcwArr);    
+        cout << tcw << endl;
+        cv::Mat tcwMat = tcw.inv();
+        */
 
     	set<string> blocks = categorize(depthMat, K, tcwMat);
 

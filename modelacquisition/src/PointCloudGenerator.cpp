@@ -128,6 +128,10 @@ namespace ark {
         }
     }
 
+    void PointCloudGenerator::PushFrame(const RGBDFrame &frame) {
+        Reproject(frame.imRGB, frame.imDepth, frame.mTcw.inv());
+    }
+
     void PointCloudGenerator::Reproject(const cv::Mat &imRGB, const cv::Mat &imD, const cv::Mat &Twc) {
 //        cv::Mat imD_guided;
 //        cv::Mat imGray(imD.rows, imD.cols, imD.depth());

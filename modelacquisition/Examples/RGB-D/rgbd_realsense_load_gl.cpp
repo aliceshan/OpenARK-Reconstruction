@@ -38,6 +38,7 @@ float xRotLength = 0.0f;
 float yRotLength = 0.0f;
 bool wireframe = false;
 bool stop = false;
+bool stopSaveFrame = false;
 
 ark::PointCloudGenerator *pointCloudGenerator;
 ark::SaveFrame *saveFrame;
@@ -199,9 +200,9 @@ void application_thread() {
     pointCloudGenerator->Start();
 
     // Main loop, loads key frames
-    int tframe = 0;
+    int tframe = 339;
     int empty = 0;
-    while (true) {
+    while (true && !stopSaveFrame) {
 
         if(empty == 10)
             break;
@@ -216,10 +217,12 @@ void application_thread() {
 
         cv::cvtColor(frame.imRGB, frame.imRGB, cv::COLOR_BGR2RGB);
 
-        pointCloudGenerator->OnKeyFrameAvailable(frame);
+        pointCloudGenerator->PushFrame(frame); 
 
         empty = 0;
     }
+    pointCloudGenerator->RequestStop();
+    pointCloudGenerator->SavePly();
 }
 
 void keyboard_func(unsigned char key, int x, int y) {
@@ -258,6 +261,7 @@ void keyboard_func(unsigned char key, int x, int y) {
 
     // Save the most updated model in a ply file
     if (key == 'p') {
+        stopSaveFrame = true;
         pointCloudGenerator->RequestStop();
         pointCloudGenerator->SavePly();
     }
@@ -309,7 +313,7 @@ int main(int argc, char **argv) {
     (void) glutCreateWindow("GLUT Program");
 
     // Create pointCloudGenerator (TSDF). It initializes all system threads and gets ready to process frames (RBG and Depth).
-    pointCloudGenerator = new ark::PointCloudGenerator(argv[2], 0, -6, -6);
+    pointCloudGenerator = new ark::PointCloudGenerator(argv[2], -9, 3, -9);
     // Create saveFrame. It loads from timestamp, RGB image, depth image folders to retrieve key frames
     saveFrame = new ark::SaveFrame(argv[1]);
 

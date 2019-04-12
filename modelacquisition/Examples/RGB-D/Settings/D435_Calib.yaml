@@ -50,15 +50,15 @@ DepthMapFactor: 1000
 # TSDF values
 
 
-Voxel.Origin.x: -2.5 #right
+Voxel.Origin.x: -6 #right
 
-Voxel.Origin.y: -3 #forward
+Voxel.Origin.y: -6 #forward
  
-Voxel.Origin.z: -1 #up
+Voxel.Origin.z: -6 #up
 
-Voxel.Size.Online: 0.03
+Voxel.Size.Online: 0.2
 
-Voxel.TruncMargin.Online: 0.15
+Voxel.TruncMargin.Online: 1
 
 Voxel.Size.Offline: 0.03
 

@@ -102,6 +102,10 @@ namespace ark {
         }
     }
 
+    ORB_SLAM2::Map* ORBSLAMSystem::getMap() {
+        return mpMap;
+    }
+
     void ORBSLAMSystem::ShutDown() {
         mpLocalMapper->RequestFinish();
         mpLoopCloser->RequestFinish();

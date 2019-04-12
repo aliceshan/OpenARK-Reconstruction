@@ -20,6 +20,7 @@ namespace ark {
 
         int pt_grid_z = blockIdx.x;
         int pt_grid_y = threadIdx.x;
+        bool didSomething = false;
 
         for (int pt_grid_x = 0; pt_grid_x < param->vox_dim.x; ++pt_grid_x) {
 
@@ -40,23 +41,33 @@ namespace ark {
             float pt_cam_z =
                     c2w[0 * 4 + 2] * tmp_pt[0] + c2w[1 * 4 + 2] * tmp_pt[1] + c2w[2 * 4 + 2] * tmp_pt[2];
 
-            if (pt_cam_z <= 0)
+            if (pt_cam_z <= 0) {
+                printf("%d", 1);
                 continue;
+            }
 
             int pt_pix_x = roundf(K[0 * 3 + 0] * (pt_cam_x / pt_cam_z) + K[0 * 3 + 2]);
             int pt_pix_y = roundf(K[1 * 3 + 1] * (pt_cam_y / pt_cam_z) + K[1 * 3 + 2]);
-            if (pt_pix_x < 0 || pt_pix_x >= width || pt_pix_y < 0 || pt_pix_y >= height)
+            if (pt_pix_x < 0 || pt_pix_x >= width || pt_pix_y < 0 || pt_pix_y >= height) {
+                printf("%d", 2);
                 continue;
+            }
 
             float depth_val = depth[pt_pix_y * width + pt_pix_x];
 
-            if (depth_val <= 0 || depth_val > param->max_depth)
+            if (depth_val <= 0 || depth_val > param->max_depth) {
+                printf("%d", 3);
                 continue;
+            }
 
             float diff = depth_val - pt_cam_z;
 
-            if (diff <= -param->trunc_margin)
+            if (diff <= -param->trunc_margin) {
+                printf("%d", 4);
                 continue;
+            }
+
+            didSomething = true;
 
             // Integrate
             int volume_idx = pt_grid_z * param->vox_dim.y * param->vox_dim.x + pt_grid_y * param->vox_dim.x + pt_grid_x;
@@ -72,6 +83,8 @@ namespace ark {
             TSDF_color[volume_idx * 3 + 2] =
                     (TSDF_color[volume_idx * 3 + 2] * weight_old + rgb[3 * image_idx + 2]) / weight_new;
         }
+
+        //printf("%d\n", didSomething);
     }
 
     __global__
@@ -488,23 +501,28 @@ namespace ark {
 
 
         std::cout << vertexCount << std::endl;
-        std::ofstream plyFile;
-        plyFile.open(outputFileName);
-        plyFile << "ply\nformat ascii 1.0\ncomment stanford bunny\nelement vertex ";
-        plyFile << vertices.size() << "\n";
-        plyFile
-                << "property float x\nproperty float y\nproperty float z\nproperty uchar red\nproperty uchar green\nproperty uchar blue\n";
-        plyFile << "element face " << faces.size() << "\n";
-        plyFile << "property list uchar int vertex_index\nend_header\n";
-        for (auto v : vertices) {
-            plyFile << v.x << " " << v.y << " " << v.z << " " << (int) v.r << " " << (int) v.g << " " << (int) v.b
-                    << "\n";
+        if (vertexCount > 0) {
+            std::ofstream plyFile;
+            plyFile.open(outputFileName);
+            plyFile << "ply\nformat ascii 1.0\ncomment stanford bunny\nelement vertex ";
+            plyFile << vertices.size() << "\n";
+            plyFile
+                    << "property float x\nproperty float y\nproperty float z\nproperty uchar red\nproperty uchar green\nproperty uchar blue\n";
+            plyFile << "element face " << faces.size() << "\n";
+            plyFile << "property list uchar int vertex_index\nend_header\n";
+            for (auto v : vertices) {
+                plyFile << v.x << " " << v.y << " " << v.z << " " << (int) v.r << " " << (int) v.g << " " << (int) v.b
+                        << "\n";
+            }
+            for (auto f : faces) {
+                plyFile << "3 " << f.vIdx[0] << " " << f.vIdx[1] << " " << f.vIdx[2] << "\n";
+            }
+            plyFile.close();
+            std::cout << "File saved" << std::endl;
         }
-        for (auto f : faces) {
-            plyFile << "3 " << f.vIdx[0] << " " << f.vIdx[1] << " " << f.vIdx[2] << "\n";
+        else {
+            std::cout << "No vertices, not saved." << std::endl;
         }
-        plyFile.close();
-        std::cout << "File saved" << std::endl;
     }
 
     __host__

@@ -37,6 +37,8 @@ namespace ark{
 
         void OnKeyFrameAvailable(const RGBDFrame &keyFrame);
 
+        void PushFrame(const RGBDFrame &frame);
+
         void OnFrameAvailable(const RGBDFrame &frame);
 
         void OnLoopClosureDetected();

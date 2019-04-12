@@ -15,6 +15,8 @@ Online version of 3D reconstruction
 
 #include <opencv2/opencv.hpp>
 
+
+#include <Map.h>
 #include <SaveFrame.h>
 #include <ORBSLAMSystem.h>
 #include <BridgeRSD435.h>
@@ -193,6 +195,23 @@ void application_thread() {
     }
 }
 
+void updateKeyFrames() {
+    /*cout << "here0" << endl;
+    ORB_SLAM2::Map* myMap;
+    myMap = slam->getMap();
+    vector<ORB_SLAM2::KeyFrame*> keyFrames = myMap->GetAllKeyFrames();
+    for (ORB_SLAM2::KeyFrame* kframe: keyFrames) {
+        cout << "here1" << endl;
+        cv::Mat tcw = kframe->GetPose();
+        int frameId = (int)kframe->mnId;
+        cv::FileStorage fs("./frames/tcw/" + to_string(frameId) + ".xml",cv::FileStorage::WRITE);
+        fs << "tcw" << tcw ;
+        //fs << "depth" << frame.imDepth ;
+        fs.release();
+    }*/
+
+}
+
 void keyboard_func(unsigned char key, int x, int y) {
     if (key == ' ') {
         if (!stop) {
@@ -235,6 +254,7 @@ void keyboard_func(unsigned char key, int x, int y) {
         bridgeRSD435->Stop();
 
         pointCloudGenerator->SavePly();
+        updateKeyFrames();
     }
 
     if (key == 'v')
@@ -286,7 +306,7 @@ int main(int argc, char **argv) {
 
     
     // Create pointCloudGenerator (GPU TSDF generater created), initiate timestamp and status
-    pointCloudGenerator = new ark::PointCloudGenerator(argv[2]);
+    pointCloudGenerator = new ark::PointCloudGenerator(argv[2], -4, -4, -1);
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     slam = new ark::ORBSLAMSystem(argv[1], argv[2], ark::ORBSLAMSystem::RGBD, true);
