@@ -196,19 +196,21 @@ void application_thread() {
 }
 
 void updateKeyFrames() {
-    /*cout << "here0" << endl;
     ORB_SLAM2::Map* myMap;
     myMap = slam->getMap();
     vector<ORB_SLAM2::KeyFrame*> keyFrames = myMap->GetAllKeyFrames();
+    int counter = 1;
     for (ORB_SLAM2::KeyFrame* kframe: keyFrames) {
-        cout << "here1" << endl;
         cv::Mat tcw = kframe->GetPose();
         int frameId = (int)kframe->mnId;
-        cv::FileStorage fs("./frames/tcw/" + to_string(frameId) + ".xml",cv::FileStorage::WRITE);
+        cv::FileStorage fs("./frames/tcw/" + to_string(frameId + 1) + ".xml",cv::FileStorage::WRITE);
         fs << "tcw" << tcw ;
         //fs << "depth" << frame.imDepth ;
         fs.release();
-    }*/
+        counter++;
+    }
+
+    cout << "finished writing updated poses" << endl;
 
 }
 
@@ -251,10 +253,10 @@ void keyboard_func(unsigned char key, int x, int y) {
     if (key == 'p') {
         slam->RequestStop();
         pointCloudGenerator->RequestStop();
+        updateKeyFrames();
         bridgeRSD435->Stop();
 
         pointCloudGenerator->SavePly();
-        updateKeyFrames();
     }
 
     if (key == 'v')

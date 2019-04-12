@@ -200,7 +200,7 @@ void application_thread() {
     pointCloudGenerator->Start();
 
     // Main loop, loads key frames
-    int tframe = 339;
+    int tframe = 250;
     int empty = 0;
     while (true && !stopSaveFrame) {
 
@@ -313,7 +313,11 @@ int main(int argc, char **argv) {
     (void) glutCreateWindow("GLUT Program");
 
     // Create pointCloudGenerator (TSDF). It initializes all system threads and gets ready to process frames (RBG and Depth).
-    pointCloudGenerator = new ark::PointCloudGenerator(argv[2], -9, 3, -9);
+    int x = 8;
+    int y = -3;
+    int z = -6;
+    pointCloudGenerator = new ark::PointCloudGenerator(argv[2], x, y, z);
+    cout << "origin: " << x << ", " << y << ", " << z << endl;
     // Create saveFrame. It loads from timestamp, RGB image, depth image folders to retrieve key frames
     saveFrame = new ark::SaveFrame(argv[1]);
 

@@ -88,19 +88,19 @@ namespace ark {
 
         cv::Mat imBGR;
         cv::cvtColor(frame.imRGB, imBGR, CV_RGB2BGR);
-        cv::imwrite(rgbPath + std::to_string(counter) + ".png", imBGR);
+        cv::imwrite(rgbPath + std::to_string(frame.frameId) + ".png", imBGR);
 
         cv::Mat depth255;
 
         
         frame.imDepth.convertTo(depth255, CV_16UC1, 1000);
-        cv::imwrite(depthPath + std::to_string(counter) + ".png", depth255);
+        cv::imwrite(depthPath + std::to_string(frame.frameId) + ".png", depth255);
 
 
-        cv::FileStorage fs(tcwPath + std::to_string(counter)+".xml",cv::FileStorage::WRITE);
+        /*cv::FileStorage fs(tcwPath + std::to_string(counter)+".xml",cv::FileStorage::WRITE);
         fs << "tcw" << frame.mTcw;
         //fs << "depth" << frame.imDepth ;
-        fs.release();
+        fs.release();*/
 
         std::cout << "finished writing " << counter << std::endl;
 
@@ -151,7 +151,7 @@ namespace ark {
 
         //TCW FROM XML
         
-        cv::FileStorage fs2(tcwPath + std::to_string(frame.frameId)+".xml", cv::FileStorage::READ);
+        cv::FileStorage fs2(tcwPath + std::to_string(frame.frameId) + ".xml", cv::FileStorage::READ);
         fs2["tcw"] >> frame.mTcw;
         fs2.release();
         
