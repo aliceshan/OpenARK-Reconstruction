@@ -61,6 +61,21 @@ float magnitude(cv::Mat vectorPoint) {
 	return sqrt(x);
 }
 
+void writeToPly(vector<cv::Mat> points) {
+    std::ofstream plyFile;
+    plyFile.open("projected_points.ply");
+    plyFile << "ply\nformat ascii 1.0\ncomment stanford bunny\nelement vertex ";
+
+    plyFile << points.size() << "\n";
+    plyFile
+                    << "property float x\nproperty float y\nproperty float z\n";
+    plyFile << "end_header\n";
+    for (cv::Mat point: points) {
+        plyFile << point.at<float>(0) << " " << point.at<float>(1) << " " << point.at<float>(2) << "\n";
+    }
+    plyFile.close();
+}
+
 
 //Finds reconstruction blocks of any given image using 2D-3D Projection
 
@@ -69,6 +84,7 @@ set<string> categorize(cv::Mat depthMat, cv::Mat cameraIntrinsic, cv::Mat tcwMat
 
 	set<string>blocks;
 
+    vector<cv::Mat> points;
 
 	for (int i = 0; i < depthMat.rows; ++i) {
 		for (int j = 0; j < depthMat.cols; ++j) {
@@ -92,12 +108,27 @@ set<string> categorize(cv::Mat depthMat, cv::Mat cameraIntrinsic, cv::Mat tcwMat
 
             projectedPoint = projectedPoint + tcwMat.rowRange(0,3).col(3);
 
-			string insideBlock = convert(projectedPoint);
+
+            points.push_back(projectedPoint.clone());
+
+
+			/*string insideBlock = convert(projectedPoint);
+
+            if (blocks.find(insideBlock) == blocks.end()) {
+                cout << "NEW POINT" << endl;
+                cout << pointDepth << endl;
+                cout << tcwMat << endl;
+                cout << tcwMat.rowRange(0,3).colRange(0,3) << endl;
+                cout << tcwMat.rowRange(0,3).col(3) << endl;
+            }
 
 			blocks.insert(insideBlock);
-
+            */
 		}
 	}
+
+
+    writeToPly(points);
 	
 
 	return blocks;
@@ -187,7 +218,7 @@ int main(int argc, char **argv) {
     K = K.inv();
 
     int empty = 0;
-    int frame = 1;
+    int frame = 628;
     cv::Mat RGBMat;
     cv::Mat depthMat;
     cv::Mat tcwMat;
@@ -237,6 +268,10 @@ int main(int argc, char **argv) {
         */
 
     	set<string> blocks = categorize(depthMat, K, tcwMat);
+
+
+        break;
+
 
         write_to_folders(blocks, RGBMat, depthMat, tcwMat, frame);
     	
