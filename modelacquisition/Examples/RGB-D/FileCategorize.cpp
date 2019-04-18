@@ -84,7 +84,7 @@ set<string> categorize(cv::Mat depthMat, cv::Mat cameraIntrinsic, cv::Mat tcwMat
 
 	set<string>blocks;
 
-    vector<cv::Mat> points;
+    //vector<cv::Mat> points;
 
 	for (int i = 0; i < depthMat.rows; ++i) {
 		for (int j = 0; j < depthMat.cols; ++j) {
@@ -109,10 +109,10 @@ set<string> categorize(cv::Mat depthMat, cv::Mat cameraIntrinsic, cv::Mat tcwMat
             projectedPoint = projectedPoint + tcwMat.rowRange(0,3).col(3);
 
 
-            points.push_back(projectedPoint.clone());
+            //points.push_back(projectedPoint.clone());
 
 
-			/*string insideBlock = convert(projectedPoint);
+			string insideBlock = convert(projectedPoint);
 
             if (blocks.find(insideBlock) == blocks.end()) {
                 cout << "NEW POINT" << endl;
@@ -123,12 +123,12 @@ set<string> categorize(cv::Mat depthMat, cv::Mat cameraIntrinsic, cv::Mat tcwMat
             }
 
 			blocks.insert(insideBlock);
-            */
+            
 		}
 	}
 
 
-    writeToPly(points);
+    //writeToPly(points);
 	
 
 	return blocks;
@@ -218,7 +218,7 @@ int main(int argc, char **argv) {
     K = K.inv();
 
     int empty = 0;
-    int frame = 628;
+    int frame = 0;
     cv::Mat RGBMat;
     cv::Mat depthMat;
     cv::Mat tcwMat;
@@ -252,6 +252,7 @@ int main(int argc, char **argv) {
         
     	cv::FileStorage fs2(tcwPath + to_string(frame) + ".xml", cv::FileStorage::READ);
     	fs2["tcw"] >> tcwMat;
+        tcwMat = tcwMat.inv();
         
         /*
         float tcwArr[4][4];
@@ -268,9 +269,6 @@ int main(int argc, char **argv) {
         */
 
     	set<string> blocks = categorize(depthMat, K, tcwMat);
-
-
-        break;
 
 
         write_to_folders(blocks, RGBMat, depthMat, tcwMat, frame);

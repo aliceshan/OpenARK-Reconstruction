@@ -40,11 +40,8 @@ namespace ark {
             std::cout<<folderPath<<" is no directory"<<std::endl;
     }
 
-    int counter;
 
     SaveFrame::SaveFrame(std::string folderPath) {
-
-        counter = 1;
 
         struct stat info;
 
@@ -57,6 +54,7 @@ namespace ark {
         createFolder(info, rgbPath);
         createFolder(info, depthPath);
         createFolder(info, tcwPath);
+        createFolder(info, folderPath + "tcw_loop/");
 
         mKeyFrame.frameId = -1;
         mbRequestStop = false;
@@ -84,7 +82,7 @@ namespace ark {
         if (mMapRGBDFrame.find(frame.frameId) != mMapRGBDFrame.end())
             return; 
 
-        std::cout<<"frameWrite frame = "<< counter <<std::endl;
+        std::cout<<"frameWrite frame = "<< frame.frameId <<std::endl;
 
         cv::Mat imBGR;
         cv::cvtColor(frame.imRGB, imBGR, CV_RGB2BGR);
@@ -97,15 +95,13 @@ namespace ark {
         cv::imwrite(depthPath + std::to_string(frame.frameId) + ".png", depth255);
 
 
-        /*cv::FileStorage fs(tcwPath + std::to_string(counter)+".xml",cv::FileStorage::WRITE);
+        cv::FileStorage fs(tcwPath + std::to_string(frame.frameId)+".xml",cv::FileStorage::WRITE);
         fs << "tcw" << frame.mTcw;
         //fs << "depth" << frame.imDepth ;
-        fs.release();*/
+        fs.release();
 
-        std::cout << "finished writing " << counter << std::endl;
+        std::cout << "finished writing " << frame.frameId << std::endl;
 
-
-        counter++;
 
 
         //RGB and Depth to .xml (.png preferable)

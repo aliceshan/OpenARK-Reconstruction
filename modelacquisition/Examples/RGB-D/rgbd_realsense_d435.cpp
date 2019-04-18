@@ -14,6 +14,8 @@ Online version of 3D reconstruction
 #include <GL/glut.h>
 
 #include <opencv2/opencv.hpp>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 
 #include <Map.h>
@@ -46,6 +48,7 @@ ark::ORBSLAMSystem *slam;
 ark::SaveFrame* saveFrame;
 BridgeRSD435 *bridgeRSD435;
 thread *app;
+int counter = 0;
 
 void draw_box(float ox, float oy, float oz, float width, float height, float length) {
     glLineWidth(1.0f);
@@ -175,6 +178,48 @@ void reshape_func(GLint width, GLint height) {
     glTranslatef(0.0f, 0.0f, -3.0f);
 }
 
+void createFolder(struct stat &info, std::string folderPath){
+    if(stat( folderPath.c_str(), &info ) != 0 ) {
+        if (-1 == mkdir(folderPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH))
+        {
+            std::cout<< "Error creating directory "<< folderPath<<" !" << std::endl;
+            exit(1);
+        }
+        std::cout << folderPath << " is created" << folderPath << std::endl;
+    }else if( info.st_mode & S_IFDIR )  // S_ISDIR() doesn't exist on my windows
+        std::cout<<folderPath<<" is a directory"<<std::endl;
+    else
+        std::cout<<folderPath<<" is no directory"<<std::endl;
+}
+
+void updateKeyFrames() {
+
+    struct stat info;
+
+    string folder = "./frames/tcw_loop" + to_string(counter) + "/";
+    createFolder(info, folder);
+
+    cout << "writing updated poses" << endl;
+
+    ORB_SLAM2::Map* myMap;
+    myMap = slam->getMap();
+    vector<ORB_SLAM2::KeyFrame*> keyFrames = myMap->GetAllKeyFrames();
+    cout << "number of poses: " << keyFrames.size() << endl;
+    for (ORB_SLAM2::KeyFrame* kframe: keyFrames) {
+        cv::Mat tcw = kframe->GetPose();
+        int frameId = (int)kframe->mnId;
+        cv::FileStorage fs("./frames/tcw_loop" + to_string(counter) + "/" + to_string(frameId) + ".xml",cv::FileStorage::WRITE);
+        fs << "tcw" << tcw ;
+        //fs << "depth" << frame.imDepth ;
+        fs.release();
+    }
+
+    counter++;
+
+    cout << "finished writing updated poses" << endl;
+
+}
+
 void application_thread() {
     slam->Start();
     pointCloudGenerator->Start();
@@ -190,29 +235,14 @@ void application_thread() {
         bridgeRSD435->GrabRGBDPair(imBGR, imD);
 
         cv::cvtColor(imBGR, imRGB, cv::COLOR_BGR2RGB);
+
+        imBGR.release();
+
         // Pass the image to the SLAM system
         slam->PushFrame(imRGB, imD, tframe);
     }
 }
 
-void updateKeyFrames() {
-    ORB_SLAM2::Map* myMap;
-    myMap = slam->getMap();
-    vector<ORB_SLAM2::KeyFrame*> keyFrames = myMap->GetAllKeyFrames();
-    int counter = 1;
-    for (ORB_SLAM2::KeyFrame* kframe: keyFrames) {
-        cv::Mat tcw = kframe->GetPose();
-        int frameId = (int)kframe->mnId;
-        cv::FileStorage fs("./frames/tcw/" + to_string(frameId + 1) + ".xml",cv::FileStorage::WRITE);
-        fs << "tcw" << tcw ;
-        //fs << "depth" << frame.imDepth ;
-        fs.release();
-        counter++;
-    }
-
-    cout << "finished writing updated poses" << endl;
-
-}
 
 void keyboard_func(unsigned char key, int x, int y) {
     if (key == ' ') {
@@ -221,12 +251,14 @@ void keyboard_func(unsigned char key, int x, int y) {
             stop = !stop;
         } else {
             slam->RequestStop();
+            updateKeyFrames();
             pointCloudGenerator->RequestStop();
             bridgeRSD435->Stop();
         }
     }
 
     if (key == 'w') {
+        updateKeyFrames();
         zTrans += 0.3f;
     }
 
@@ -253,9 +285,8 @@ void keyboard_func(unsigned char key, int x, int y) {
     if (key == 'p') {
         slam->RequestStop();
         pointCloudGenerator->RequestStop();
-        updateKeyFrames();
         bridgeRSD435->Stop();
-
+        updateKeyFrames();
         pointCloudGenerator->SavePly();
     }
 
@@ -308,7 +339,7 @@ int main(int argc, char **argv) {
 
     
     // Create pointCloudGenerator (GPU TSDF generater created), initiate timestamp and status
-    pointCloudGenerator = new ark::PointCloudGenerator(argv[2], -4, -4, -1);
+    pointCloudGenerator = new ark::PointCloudGenerator(argv[2]);
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     slam = new ark::ORBSLAMSystem(argv[1], argv[2], ark::ORBSLAMSystem::RGBD, true);

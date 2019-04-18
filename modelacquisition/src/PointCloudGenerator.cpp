@@ -176,10 +176,12 @@ namespace ark {
 
     void PointCloudGenerator::SavePly() {
         if (offlineRecon) {
+            std::cout << "saving at offline" << std::endl;
             mpGpuTsdfGenerator->SavePLY("model_offline_" + std::to_string((int)v_g_o_x) + "_" + 
                std::to_string((int)v_g_o_y) + "_" + std::to_string((int)v_g_o_z) + ".ply");
         }
         else {
+            std::cout << "saving at online" << std::endl;
             mpGpuTsdfGenerator->SavePLY("model_online.ply");
         }
     }
