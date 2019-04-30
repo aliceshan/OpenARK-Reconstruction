@@ -129,7 +129,10 @@ namespace ark {
     }
 
     void PointCloudGenerator::PushFrame(const RGBDFrame &frame) {
-        Reproject(frame.imRGB, frame.imDepth, frame.mTcw.inv());
+
+        cv::Mat Twc = frame.mTcw.inv();
+
+        Reproject(frame.imRGB, frame.imDepth, Twc);
     }
 
     void PointCloudGenerator::Reproject(const cv::Mat &imRGB, const cv::Mat &imD, const cv::Mat &Twc) {
@@ -177,7 +180,7 @@ namespace ark {
     void PointCloudGenerator::SavePly() {
         if (offlineRecon) {
             std::cout << "saving at offline" << std::endl;
-            mpGpuTsdfGenerator->SavePLY("model_offline_" + std::to_string((int)v_g_o_x) + "_" + 
+            mpGpuTsdfGenerator->SavePLY("./meshes/model_offline_" + std::to_string((int)v_g_o_x) + "_" + 
                std::to_string((int)v_g_o_y) + "_" + std::to_string((int)v_g_o_z) + ".ply");
         }
         else {

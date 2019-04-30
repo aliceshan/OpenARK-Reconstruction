@@ -22,6 +22,8 @@ Offline version of 3D reconstruction with categorization
 
 
 #include <opencv2/opencv.hpp>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <SaveFrame.h>
 #include <PointCloudGenerator.h>
@@ -33,6 +35,23 @@ std::string settingsFile;
 std::string directoryName;
 
 using namespace std;
+
+
+
+void createFolder(struct stat &info, std::string folderPath){
+    if(stat( folderPath.c_str(), &info ) != 0 ) {
+        if (-1 == mkdir(folderPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH))
+        {
+            std::cout<< "Error creating directory "<< folderPath<<" !" << std::endl;
+            exit(1);
+        }
+        std::cout << folderPath << " is created" << folderPath << std::endl;
+    }else if( info.st_mode & S_IFDIR )  // S_ISDIR() doesn't exist on my windows
+        std::cout<<folderPath<<" is a directory"<<std::endl;
+    else
+        std::cout<<folderPath<<" is no directory"<<std::endl;
+}
+
 
 set<string> getFiles(string filename){
     cout << "getting names from: " << filename << endl;
@@ -88,6 +107,16 @@ void application_thread() {
     for (string origin: blocks) {  
 
         vector<float> originF = getOrigin(origin);
+
+        if (abs(originF[0]) > 9) {
+            continue;
+        }
+        if (abs(originF[1]) > 9) {
+            continue;
+        }
+        if (abs(originF[2]) > 9) {
+            continue;
+        }
         
         // Create saveFrame. It loads from timestamp, RGB image, depth image folders to retrieve key frames in the current block
         ark::SaveFrame *saveFrame = new ark::SaveFrame(directoryName + origin + "/");
@@ -117,12 +146,16 @@ void application_thread() {
 
             cv::cvtColor(frame.imRGB, frame.imRGB, cv::COLOR_BGR2RGB);
 
-            pointCloudGenerator->OnKeyFrameAvailable(frame);
+            pointCloudGenerator->PushFrame(frame);
 
         }
 
         pointCloudGenerator->RequestStop();
         // Save the model in the current clock in a ply file
+
+        struct stat info;
+        createFolder(info, "./meshes/");
+
         pointCloudGenerator->SavePly();
         pointCloudGenerator->ClearTSDF();
         delete pointCloudGenerator;
@@ -139,7 +172,7 @@ int main(int argc, char **argv) {
     settingsFile = argv[2];
 
     directoryName = argv[1];
-    directoryName += "/frames_categorized/";
+    directoryName += "frames_categorized/";
 
     // Main loop
     application_thread();

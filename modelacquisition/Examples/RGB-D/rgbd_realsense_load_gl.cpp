@@ -1,4 +1,5 @@
 /*
+Esther commented
 Offline version of 3D reconstruction
 - Loads key frames from the online 3D reconstruction module
 - 3D dense model reconstruction through TSDF 
@@ -313,8 +314,8 @@ int main(int argc, char **argv) {
     (void) glutCreateWindow("GLUT Program");
 
     // Create pointCloudGenerator (TSDF). It initializes all system threads and gets ready to process frames (RBG and Depth).
-    int x = 0;
-    int y = -2;
+    int x = -3;
+    int y = -3;
     int z = -3;
     pointCloudGenerator = new ark::PointCloudGenerator(argv[2], x, y, z);
     cout << "origin: " << x << ", " << y << ", " << z << endl;

@@ -20,6 +20,7 @@ string folderPath, rgbPath, depthPath, tcwPath;
 float blockSize; //size of reconstruction section size (meters)
 float maxAccurateDistance = 10; //based on camera limits to exclude noisy measurements (meters)
 int width_, height_; //camera paramaters, obtained from .yaml
+int precision = 5; //projects every precision-th row and column (total pixels / precision^2 pixels projected)
 
 
 struct stat info;
@@ -63,7 +64,7 @@ float magnitude(cv::Mat vectorPoint) {
 
 void writeToPly(vector<cv::Mat> points) {
     std::ofstream plyFile;
-    plyFile.open("projected_points.ply");
+    plyFile.open("projected_points2.ply");
     plyFile << "ply\nformat ascii 1.0\ncomment stanford bunny\nelement vertex ";
 
     plyFile << points.size() << "\n";
@@ -86,8 +87,8 @@ set<string> categorize(cv::Mat depthMat, cv::Mat cameraIntrinsic, cv::Mat tcwMat
 
     //vector<cv::Mat> points;
 
-	for (int i = 0; i < depthMat.rows; ++i) {
-		for (int j = 0; j < depthMat.cols; ++j) {
+	for (int i = 0; i < depthMat.rows; i += precision) {
+		for (int j = 0; j < depthMat.cols; j += precision) {
             float pointDepth = depthMat.at<float>(i, j);
 			if (pointDepth < 0.0001 || pointDepth > maxAccurateDistance) {
 				continue;
@@ -114,13 +115,13 @@ set<string> categorize(cv::Mat depthMat, cv::Mat cameraIntrinsic, cv::Mat tcwMat
 
 			string insideBlock = convert(projectedPoint);
 
-            if (blocks.find(insideBlock) == blocks.end()) {
+            /*if (blocks.find(insideBlock) == blocks.end()) {
                 cout << "NEW POINT" << endl;
                 cout << pointDepth << endl;
                 cout << tcwMat << endl;
                 cout << tcwMat.rowRange(0,3).colRange(0,3) << endl;
                 cout << tcwMat.rowRange(0,3).col(3) << endl;
-            }
+            }*/
 
 			blocks.insert(insideBlock);
             
@@ -141,7 +142,6 @@ set<string> categorize(cv::Mat depthMat, cv::Mat cameraIntrinsic, cv::Mat tcwMat
 void write_to_folders(set<string> blocks, cv::Mat RGBMat, cv::Mat depthMat, cv::Mat tcwMat, int frame) {
 
     for (string block : blocks) {
-        cout << "block to assign: " << block << endl;
 
         string pathAssign = folderPath + "/frames_categorized/" + block + "/";
         string rgbPathAssign = pathAssign + "RGB/";
@@ -191,7 +191,7 @@ int main(int argc, char **argv) {
         cout << folderPath << " is not a valid directory" << endl;
         return 0;
     }
-    createFolder(folderPath + "/frames_categorized/");
+    createFolder(folderPath + "frames_categorized/");
 
     string strSettingsFile = argv[2];
 
@@ -237,7 +237,7 @@ int main(int argc, char **argv) {
     		cout << "no image found at frame_id: " << frame << endl;
     		empty++;
     		frame++;
-    		if (empty > 10) {
+    		if (empty > 30) {
     			break;
     		}
     		continue;
@@ -245,14 +245,32 @@ int main(int argc, char **argv) {
 
 
     	cout << "calculating frame: " << frame << endl;
-        empty = 0;
 
 
         //Obtain tcw from .xml
         
     	cv::FileStorage fs2(tcwPath + to_string(frame) + ".xml", cv::FileStorage::READ);
     	fs2["tcw"] >> tcwMat;
-        tcwMat = tcwMat.inv();
+
+
+        if (tcwMat.rows == 0) {
+            cout << "no tcw found at frame_id: " << frame << endl;
+            empty++;
+            frame++;
+            if (empty > 30) {
+                break;
+            }
+            continue;
+        }
+
+
+        empty = 0;
+
+
+
+
+
+
         
         /*
         float tcwArr[4][4];
@@ -265,11 +283,17 @@ int main(int argc, char **argv) {
         }
         cv::Mat tcw(4, 4, CV_32FC1, tcwArr);    
         cout << tcw << endl;
-        cv::Mat tcwMat = tcw.inv();
         */
+
+
+
+
+        //For whatever reason I have to invert this tcw to use it like a tcw??
+        tcwMat = tcwMat.inv();
 
     	set<string> blocks = categorize(depthMat, K, tcwMat);
 
+        tcwMat = tcwMat.inv();
 
         write_to_folders(blocks, RGBMat, depthMat, tcwMat, frame);
     	

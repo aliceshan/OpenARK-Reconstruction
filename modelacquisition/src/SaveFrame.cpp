@@ -2,6 +2,7 @@
 // Created by yiwen on 2/2/19.
 //
 /*
+Esther commented
 - Enables online frame writing to folder for offline reconstruction later
 - Enables offline file access
 - Requires onKeyFrameAvailable handler in SLAM
@@ -95,6 +96,8 @@ namespace ark {
         cv::imwrite(depthPath + std::to_string(frame.frameId) + ".png", depth255);
 
 
+        //cv::Mat tcw = frame.mTcw.inv();
+
         cv::FileStorage fs(tcwPath + std::to_string(frame.frameId)+".xml",cv::FileStorage::WRITE);
         fs << "tcw" << frame.mTcw;
         //fs << "depth" << frame.imDepth ;
@@ -117,7 +120,7 @@ namespace ark {
     }
 
     RGBDFrame SaveFrame::frameLoad(int frameId){
-        std::cout<<"frameLoad frame = "<<frameId<<std::endl;
+        std::cout<<"frameLoad start = "<<frameId<<std::endl;
 
         RGBDFrame frame;
 
@@ -127,6 +130,7 @@ namespace ark {
         frame.imRGB = cv::imread(rgbPath + std::to_string(frame.frameId) + ".png",cv::IMREAD_COLOR);
 
         if(frame.imRGB.rows == 0){
+                    std::cout<<"frameLoad RGB fail = "<<frameId<<std::endl;
             frame.frameId = -1;
             return frame;
         }
@@ -150,8 +154,21 @@ namespace ark {
         cv::FileStorage fs2(tcwPath + std::to_string(frame.frameId) + ".xml", cv::FileStorage::READ);
         fs2["tcw"] >> frame.mTcw;
         fs2.release();
-        
 
+
+        //std::cout << tcwPath + std::to_string(frame.frameId) + ".xml" << std::endl;
+        //std::cout << frame.mTcw << std::endl;
+
+
+        if(frame.mTcw.rows == 0) {
+                                std::cout<<"frameLoad tcw fail = "<<frameId<<std::endl;
+
+            frame.frameId = -1;
+            return frame;
+        }
+
+        
+        std::cout<<"frameLoad frame = "<<frameId<<std::endl;
 
         /*
         //TCW FROM TEXT
