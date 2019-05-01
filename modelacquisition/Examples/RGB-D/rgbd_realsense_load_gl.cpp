@@ -205,14 +205,14 @@ void application_thread() {
     int empty = 0;
     while (true && !stopSaveFrame) {
 
-        if(empty == 40)
+        if(empty > 40)
             break;
 
         ark::RGBDFrame frame = saveFrame->frameLoad(tframe);
-        tframe ++ ;
+        tframe++;
 
         if(frame.frameId == -1){
-            empty ++;
+            empty++;
             continue;
         }
 
@@ -302,6 +302,7 @@ void motion_func(int x, int y) {
     glutPostRedisplay();
 }
 
+
 int main(int argc, char **argv) {
     if (argc != 3) {
         cerr << endl << "Usage: ./rgbd_realsense_load path_to_frames path_to_settings" << endl;
@@ -313,10 +314,11 @@ int main(int argc, char **argv) {
     glutInitWindowSize(window_width, window_height);
     (void) glutCreateWindow("GLUT Program");
 
-    // Create pointCloudGenerator (TSDF). It initializes all system threads and gets ready to process frames (RBG and Depth).
+    
     int x = -3;
     int y = -3;
     int z = -3;
+    // Create pointCloudGenerator (TSDF). It initializes all system threads and gets ready to process frames (RBG and Depth).
     pointCloudGenerator = new ark::PointCloudGenerator(argv[2], x, y, z);
     cout << "origin: " << x << ", " << y << ", " << z << endl;
     // Create saveFrame. It loads from timestamp, RGB image, depth image folders to retrieve key frames

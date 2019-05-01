@@ -3,6 +3,7 @@ Adam
 Offline version of 3D reconstruction with categorization
 - Loads categorized key frames
 - 3D dense model reconstruction through TSDF 
+- Saves to ./meshes/
 - Supports much larger and accurate reconstruction space than the uncatergorizaed offline version
 - Camera calibration file required
 - No GL support (see rgbd_realsense_load_gl.cpp)
@@ -22,8 +23,6 @@ Offline version of 3D reconstruction with categorization
 
 
 #include <opencv2/opencv.hpp>
-#include <sys/types.h>
-#include <sys/stat.h>
 
 #include <SaveFrame.h>
 #include <PointCloudGenerator.h>
@@ -37,20 +36,6 @@ std::string directoryName;
 using namespace std;
 
 
-
-void createFolder(struct stat &info, std::string folderPath){
-    if(stat( folderPath.c_str(), &info ) != 0 ) {
-        if (-1 == mkdir(folderPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH))
-        {
-            std::cout<< "Error creating directory "<< folderPath<<" !" << std::endl;
-            exit(1);
-        }
-        std::cout << folderPath << " is created" << folderPath << std::endl;
-    }else if( info.st_mode & S_IFDIR )  // S_ISDIR() doesn't exist on my windows
-        std::cout<<folderPath<<" is a directory"<<std::endl;
-    else
-        std::cout<<folderPath<<" is no directory"<<std::endl;
-}
 
 
 set<string> getFiles(string filename){
@@ -107,16 +92,6 @@ void application_thread() {
     for (string origin: blocks) {  
 
         vector<float> originF = getOrigin(origin);
-
-        if (abs(originF[0]) > 9) {
-            continue;
-        }
-        if (abs(originF[1]) > 9) {
-            continue;
-        }
-        if (abs(originF[2]) > 9) {
-            continue;
-        }
         
         // Create saveFrame. It loads from timestamp, RGB image, depth image folders to retrieve key frames in the current block
         ark::SaveFrame *saveFrame = new ark::SaveFrame(directoryName + origin + "/");
@@ -127,10 +102,6 @@ void application_thread() {
         pointCloudGenerator->Start();
 
         set<string> frames = getFiles(directoryName + origin + "/RGB/");
-
-        if (frames.size() < 3) {
-            continue;
-        }
 
         set<int> tframes;
         for (string frameC: frames) {
@@ -152,9 +123,6 @@ void application_thread() {
 
         pointCloudGenerator->RequestStop();
         // Save the model in the current clock in a ply file
-
-        struct stat info;
-        createFolder(info, "./meshes/");
 
         pointCloudGenerator->SavePly();
         pointCloudGenerator->ClearTSDF();

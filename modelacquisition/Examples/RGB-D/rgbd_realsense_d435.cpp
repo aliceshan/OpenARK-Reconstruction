@@ -4,6 +4,7 @@ Online version of 3D reconstruction
 - Intel realsense D435 sensor integration
 - Camera pose estimation using ORBSLAM
 - Real-time coarse mesh model generation using TSDF, and visualization through OpenGL tools 
+- Saves to ./frames/
 - Key frames are saved into seperate folders (timestamps, RGB images, Depth images) for offline reconstruction. 
 */
 
@@ -49,7 +50,6 @@ ark::ORBSLAMSystem *slam;
 ark::SaveFrame* saveFrame;
 BridgeRSD435 *bridgeRSD435;
 thread *app;
-int counter = 0;
 
 void draw_box(float ox, float oy, float oz, float width, float height, float length) {
     glLineWidth(1.0f);
@@ -193,11 +193,14 @@ void createFolder(struct stat &info, std::string folderPath){
         std::cout<<folderPath<<" is no directory"<<std::endl;
 }
 
+
+//Get loop-closed keyframes (for large-scale scan)
+
 void updateKeyFrames() {
 
     struct stat info;
 
-    string folder = "./frames/tcw_loop" + to_string(counter) + "/";
+    string folder = "./frames/tcw_loop/";
     createFolder(info, folder);
 
     cout << "writing updated poses" << endl;
@@ -209,13 +212,11 @@ void updateKeyFrames() {
     for (ORB_SLAM2::KeyFrame* kframe: keyFrames) {
         cv::Mat tcw = kframe->GetPose();
         int frameId = (int)kframe->mnId;
-        cv::FileStorage fs("./frames/tcw_loop" + to_string(counter) + "/" + to_string(frameId) + ".xml",cv::FileStorage::WRITE);
+        cv::FileStorage fs("./frames/tcw_loop/" + to_string(frameId) + ".xml",cv::FileStorage::WRITE);
         fs << "tcw" << tcw ;
         //fs << "depth" << frame.imDepth ;
         fs.release();
     }
-
-    counter++;
 
     cout << "finished writing updated poses" << endl;
 
@@ -259,7 +260,6 @@ void keyboard_func(unsigned char key, int x, int y) {
     }
 
     if (key == 'w') {
-        updateKeyFrames();
         zTrans += 0.3f;
     }
 

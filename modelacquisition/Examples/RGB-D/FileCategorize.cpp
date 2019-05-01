@@ -18,8 +18,7 @@ using namespace std;
 
 string folderPath, rgbPath, depthPath, tcwPath;
 float blockSize; //size of reconstruction section size (meters)
-float maxAccurateDistance = 10; //based on camera limits to exclude noisy measurements (meters)
-int width_, height_; //camera paramaters, obtained from .yaml
+float maxAccurateDistance; //based on camera limits to exclude noisy measurements (meters)
 int precision = 5; //projects every precision-th row and column (total pixels / precision^2 pixels projected)
 
 
@@ -62,30 +61,12 @@ float magnitude(cv::Mat vectorPoint) {
 	return sqrt(x);
 }
 
-void writeToPly(vector<cv::Mat> points) {
-    std::ofstream plyFile;
-    plyFile.open("projected_points2.ply");
-    plyFile << "ply\nformat ascii 1.0\ncomment stanford bunny\nelement vertex ";
-
-    plyFile << points.size() << "\n";
-    plyFile
-                    << "property float x\nproperty float y\nproperty float z\n";
-    plyFile << "end_header\n";
-    for (cv::Mat point: points) {
-        plyFile << point.at<float>(0) << " " << point.at<float>(1) << " " << point.at<float>(2) << "\n";
-    }
-    plyFile.close();
-}
-
 
 //Finds reconstruction blocks of any given image using 2D-3D Projection
 
 set<string> categorize(cv::Mat depthMat, cv::Mat cameraIntrinsic, cv::Mat tcwMat) {
 
-
 	set<string>blocks;
-
-    //vector<cv::Mat> points;
 
 	for (int i = 0; i < depthMat.rows; i += precision) {
 		for (int j = 0; j < depthMat.cols; j += precision) {
@@ -110,27 +91,12 @@ set<string> categorize(cv::Mat depthMat, cv::Mat cameraIntrinsic, cv::Mat tcwMat
             projectedPoint = projectedPoint + tcwMat.rowRange(0,3).col(3);
 
 
-            //points.push_back(projectedPoint.clone());
-
-
 			string insideBlock = convert(projectedPoint);
-
-            /*if (blocks.find(insideBlock) == blocks.end()) {
-                cout << "NEW POINT" << endl;
-                cout << pointDepth << endl;
-                cout << tcwMat << endl;
-                cout << tcwMat.rowRange(0,3).colRange(0,3) << endl;
-                cout << tcwMat.rowRange(0,3).col(3) << endl;
-            }*/
 
 			blocks.insert(insideBlock);
             
 		}
 	}
-
-
-    //writeToPly(points);
-	
 
 	return blocks;
 
@@ -197,15 +163,17 @@ int main(int argc, char **argv) {
 
     cv::FileStorage fSettings(strSettingsFile, cv::FileStorage::READ);
 
+
+    //Get camera intrinsic's and reconstruction parameters
+
     float fx_ = fSettings["Camera.fx"];
     float fy_ = fSettings["Camera.fy"];
     float cx_ = fSettings["Camera.cx"];
     float cy_ = fSettings["Camera.cy"];
-    width_ = fSettings["Camera.width"];
-    height_ = fSettings["Camera.height"];
     float voxSize = fSettings["Voxel.Size.Offline"];
     int voxDim = fSettings["Voxel.Dim.x"];
 
+    maxAccurateDistance = fSettings["MaxDepth"];
     blockSize = voxSize * voxDim;
 
 
@@ -215,6 +183,7 @@ int main(int argc, char **argv) {
     float Karr[3][3] = {{fx_, 0, cx_}, {0, fy_, cy_}, {0, 0, 1}};
     cv::Mat K(3, 3, CV_32F, Karr);
 
+    //Inverse camera intrinsic matrix
     K = K.inv();
 
     int empty = 0;
@@ -227,7 +196,12 @@ int main(int argc, char **argv) {
     //Main loop, currently geared towards .png for RGB and Depth, .xml for tcw
 
     while (true) {
-    	RGBMat = cv::imread(rgbPath + std::to_string(frame) + ".png",cv::IMREAD_COLOR);
+
+        if (empty > 30) {
+            break;
+        }
+
+    	RGBMat = cv::imread(rgbPath + std::to_string(frame) + ".png", cv::IMREAD_COLOR);
     	depthMat = cv::imread(depthPath + to_string(frame) + ".png", -1);
     	depthMat.convertTo(depthMat, CV_32FC1);
         depthMat *= 0.001;
@@ -237,9 +211,6 @@ int main(int argc, char **argv) {
     		cout << "no image found at frame_id: " << frame << endl;
     		empty++;
     		frame++;
-    		if (empty > 30) {
-    			break;
-    		}
     		continue;
     	} 
 
@@ -257,9 +228,6 @@ int main(int argc, char **argv) {
             cout << "no tcw found at frame_id: " << frame << endl;
             empty++;
             frame++;
-            if (empty > 30) {
-                break;
-            }
             continue;
         }
 
@@ -267,11 +235,8 @@ int main(int argc, char **argv) {
         empty = 0;
 
 
+        //Obtain tcw from .txt
 
-
-
-
-        
         /*
         float tcwArr[4][4];
         std::ifstream tcwFile;
@@ -297,10 +262,8 @@ int main(int argc, char **argv) {
 
         write_to_folders(blocks, RGBMat, depthMat, tcwMat, frame);
     	
-
     	frame++;
 
-    	
     }
     
 

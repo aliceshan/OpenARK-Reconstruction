@@ -9,12 +9,29 @@
 #include <MathUtils.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/filters/fast_bilateral.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 //#include <opencv2/ximgproc.hpp>
 #include "PointCloudGenerator.h"
 
 int frame_id = 0;
 
 namespace ark {
+
+    void createFolder(struct stat &info, std::string folderPath){
+        if(stat( folderPath.c_str(), &info ) != 0 ) {
+            if (-1 == mkdir(folderPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH))
+            {
+                std::cout<< "Error creating directory "<< folderPath<<" !" << std::endl;
+                exit(1);
+            }
+            std::cout << folderPath << " is created" << folderPath << std::endl;
+        }else if( info.st_mode & S_IFDIR )  // S_ISDIR() doesn't exist on my windows
+            std::cout<<folderPath<<" is a directory"<<std::endl;
+        else
+            std::cout<<folderPath<<" is no directory"<<std::endl;
+    }
+
 
     //online constructor
     PointCloudGenerator::PointCloudGenerator(std::string strSettingsFile) {
@@ -177,7 +194,12 @@ namespace ark {
         mpGpuTsdfGenerator->render();
     }
 
+
+    //Saves mesh from TSDF to ./meshes/model.ply, name based on origin point
     void PointCloudGenerator::SavePly() {
+        struct stat info;
+        createFolder(info, "./meshes/");
+
         if (offlineRecon) {
             std::cout << "saving at offline" << std::endl;
             mpGpuTsdfGenerator->SavePLY("./meshes/model_offline_" + std::to_string((int)v_g_o_x) + "_" + 
@@ -185,7 +207,7 @@ namespace ark {
         }
         else {
             std::cout << "saving at online" << std::endl;
-            mpGpuTsdfGenerator->SavePLY("model_online.ply");
+            mpGpuTsdfGenerator->SavePLY("./meshes/model_online.ply");
         }
     }
 

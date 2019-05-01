@@ -120,7 +120,7 @@ namespace ark {
     }
 
     RGBDFrame SaveFrame::frameLoad(int frameId){
-        std::cout<<"frameLoad start = "<<frameId<<std::endl;
+        std::cout<<"frameLoad start = "<< frameId <<std::endl;
 
         RGBDFrame frame;
 
@@ -130,7 +130,7 @@ namespace ark {
         frame.imRGB = cv::imread(rgbPath + std::to_string(frame.frameId) + ".png",cv::IMREAD_COLOR);
 
         if(frame.imRGB.rows == 0){
-                    std::cout<<"frameLoad RGB fail = "<<frameId<<std::endl;
+            std::cout<<"frameLoad RGB fail = "<<frameId<<std::endl;
             frame.frameId = -1;
             return frame;
         }
@@ -141,13 +141,18 @@ namespace ark {
  
         cv::Mat depth255 = cv::imread(depthPath + std::to_string(frame.frameId) + ".png",-1);
 
+        if(depth255.rows == 0){
+            std::cout<<"frameLoad depth fail = "<< frameId <<std::endl;
+            frame.frameId = -1;
+            return frame;
+        }
+
         depth255.convertTo(frame.imDepth, CV_32FC1);
 
         depth255.release();
 
         frame.imDepth *= 0.001;
         
-
 
         //TCW FROM XML
         
@@ -161,14 +166,13 @@ namespace ark {
 
 
         if(frame.mTcw.rows == 0) {
-                                std::cout<<"frameLoad tcw fail = "<<frameId<<std::endl;
-
+            std::cout<<"frameLoad tcw fail = "<< frameId <<std::endl;
             frame.frameId = -1;
             return frame;
         }
 
         
-        std::cout<<"frameLoad frame = "<<frameId<<std::endl;
+        std::cout<<"frameLoad frame = "<< frameId <<std::endl;
 
         /*
         //TCW FROM TEXT
