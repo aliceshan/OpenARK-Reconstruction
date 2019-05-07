@@ -36,8 +36,6 @@ std::string directoryName;
 using namespace std;
 
 
-
-
 set<string> getFiles(string filename){
     cout << "getting names from: " << filename << endl;
     set<string> files;
@@ -112,10 +110,7 @@ void application_thread() {
 
         for (int tframe: tframes) {
 
-
             ark::RGBDFrame frame = saveFrame->frameLoad(tframe);
-
-            cv::cvtColor(frame.imRGB, frame.imRGB, cv::COLOR_BGR2RGB);
 
             pointCloudGenerator->PushFrame(frame);
 

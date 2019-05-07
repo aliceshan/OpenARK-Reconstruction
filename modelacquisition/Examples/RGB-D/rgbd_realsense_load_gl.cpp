@@ -44,6 +44,7 @@ bool stopSaveFrame = false;
 ark::PointCloudGenerator *pointCloudGenerator;
 ark::SaveFrame *saveFrame;
 std::thread *app;
+std::string directoryName;
 
 using namespace std;
 
@@ -175,7 +176,10 @@ void reshape_func(GLint width, GLint height) {
     glTranslatef(0.0f, 0.0f, -3.0f);
 }
 
-int countFiles(string filename){
+
+set<string> getFiles(string filename){
+    cout << "getting names from: " << filename << endl;
+    set<string> files;
     DIR *dp;
     int i = 0;
     struct dirent *ep;     
@@ -183,7 +187,11 @@ int countFiles(string filename){
 
     if (dp != NULL) {
         while ((ep = readdir (dp))) {
-            i++;
+            string name = ep -> d_name;
+            if (name.length() > 2) {
+                files.insert(name);
+                i++;
+            }
         }
         (void) closedir (dp);
     }
@@ -191,9 +199,8 @@ int countFiles(string filename){
         perror ("Couldn't open the directory");
     }
     
-    i -= 2;
     printf("There's %d files in the current directory.\n", i);
-    return i;
+    return files;
 }
 
 
@@ -201,26 +208,22 @@ void application_thread() {
     pointCloudGenerator->Start();
 
     // Main loop, loads key frames
-    int tframe = 0;
-    int empty = 0;
-    while (true && !stopSaveFrame) {
+    
+    set<string> frames = getFiles(directoryName + "/tcw/");
 
-        if(empty > 40)
-            break;
+    set<int> tframes;
+    for (string frameC: frames) {
+        int tframe_ = atoi(frameC.substr(0, frameC.find(".")).c_str());
+        tframes.insert(tframe_);
+    }
+
+
+    for (int tframe: tframes) {
 
         ark::RGBDFrame frame = saveFrame->frameLoad(tframe);
-        tframe++;
-
-        if(frame.frameId == -1){
-            empty++;
-            continue;
-        }
-
-        cv::cvtColor(frame.imRGB, frame.imRGB, cv::COLOR_BGR2RGB);
 
         pointCloudGenerator->PushFrame(frame); 
 
-        empty = 0;
     }
     pointCloudGenerator->RequestStop();
     pointCloudGenerator->SavePly();
@@ -321,6 +324,8 @@ int main(int argc, char **argv) {
     // Create pointCloudGenerator (TSDF). It initializes all system threads and gets ready to process frames (RBG and Depth).
     pointCloudGenerator = new ark::PointCloudGenerator(argv[2], x, y, z);
     cout << "origin: " << x << ", " << y << ", " << z << endl;
+
+    directoryName = argv[1];
     // Create saveFrame. It loads from timestamp, RGB image, depth image folders to retrieve key frames
     saveFrame = new ark::SaveFrame(argv[1]);
 

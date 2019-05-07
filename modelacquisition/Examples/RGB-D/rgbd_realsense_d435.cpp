@@ -122,7 +122,7 @@ void init() {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
 
-    gluPerspective(45.0, (float) window_width / window_height, 10.0f, 150.0);
+    gluPerspective(45.0, (float) window_width / window_height, 10.0f, 300.0);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -172,7 +172,7 @@ void reshape_func(GLint width, GLint height) {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
 
-    gluPerspective(45.0, (float) width / height, 0.001, 100.0);
+    gluPerspective(45.0, (float) width / height, 0.001, 200.0);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();

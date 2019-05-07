@@ -7,7 +7,7 @@ Esther commented
 - Enables offline file access
 - Requires onKeyFrameAvailable handler in SLAM
 - Used in rgbd_realsense_d435, rgbd_realsense_load_gl, rgbd_realsense_load_categorized
-
+- TCW from ORBSLAM is World to Camera Transform.
 */
 
 #include <chrono>
@@ -96,8 +96,7 @@ namespace ark {
         cv::imwrite(depthPath + std::to_string(frame.frameId) + ".png", depth255);
 
 
-        //cv::Mat tcw = frame.mTcw.inv();
-
+        //TCW is World to Camera Transform
         cv::FileStorage fs(tcwPath + std::to_string(frame.frameId)+".xml",cv::FileStorage::WRITE);
         fs << "tcw" << frame.mTcw;
         //fs << "depth" << frame.imDepth ;
@@ -129,12 +128,16 @@ namespace ark {
 
         frame.imRGB = cv::imread(rgbPath + std::to_string(frame.frameId) + ".png",cv::IMREAD_COLOR);
 
+        cv::cvtColor(frame.imRGB, frame.imRGB, cv::COLOR_BGR2RGB);
+
         if(frame.imRGB.rows == 0){
             std::cout<<"frameLoad RGB fail = "<<frameId<<std::endl;
             frame.frameId = -1;
             return frame;
         }
 
+
+        //if RGB images are not the same size as depth images
         //cv::resize(rgbBig, frame.imRGB, cv::Size(640,480));
 
         //rgbBig.release();
@@ -155,24 +158,10 @@ namespace ark {
         
 
         //TCW FROM XML
-        
         cv::FileStorage fs2(tcwPath + std::to_string(frame.frameId) + ".xml", cv::FileStorage::READ);
         fs2["tcw"] >> frame.mTcw;
         fs2.release();
 
-
-        //std::cout << tcwPath + std::to_string(frame.frameId) + ".xml" << std::endl;
-        //std::cout << frame.mTcw << std::endl;
-
-
-        if(frame.mTcw.rows == 0) {
-            std::cout<<"frameLoad tcw fail = "<< frameId <<std::endl;
-            frame.frameId = -1;
-            return frame;
-        }
-
-        
-        std::cout<<"frameLoad frame = "<< frameId <<std::endl;
 
         /*
         //TCW FROM TEXT
@@ -187,6 +176,17 @@ namespace ark {
         cv::Mat tcw(4, 4, CV_32FC1, tcwArr);    
         frame.mTcw = tcw.inv();
         */
+
+
+        if(frame.mTcw.rows == 0) {
+            std::cout<<"frameLoad tcw fail = "<< frameId <<std::endl;
+            frame.frameId = -1;
+            return frame;
+        }
+
+        
+        std::cout<<"frameLoad frame = "<< frameId <<std::endl;
+
 
         return frame;
     }

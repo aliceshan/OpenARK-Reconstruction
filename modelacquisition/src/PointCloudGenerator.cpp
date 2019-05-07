@@ -16,9 +16,9 @@
 
 int frame_id = 0;
 
-namespace ark {
 
-    void createFolder(struct stat &info, std::string folderPath){
+
+void createFolder(struct stat &info, std::string folderPath){
         if(stat( folderPath.c_str(), &info ) != 0 ) {
             if (-1 == mkdir(folderPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH))
             {
@@ -32,7 +32,9 @@ namespace ark {
             std::cout<<folderPath<<" is no directory"<<std::endl;
     }
 
+namespace ark {
 
+    
     //online constructor
     PointCloudGenerator::PointCloudGenerator(std::string strSettingsFile) {
         offlineRecon = false;

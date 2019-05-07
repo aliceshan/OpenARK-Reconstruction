@@ -14,6 +14,12 @@ TCW: /frames/tcw/
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include <stdio.h>
+#include <dirent.h>
+
+
+#include <SaveFrame.h>
+
 using namespace std;
 
 string folderPath, rgbPath, depthPath, tcwPath;
@@ -24,6 +30,33 @@ int precision = 5; //projects every precision-th row and column (total pixels / 
 
 struct stat info;
 
+//Gets files in a directory and returns a set with file names
+
+set<string> getFiles(string filename){
+    cout << "getting names from: " << filename << endl;
+    set<string> files;
+    DIR *dp;
+    int i = 0;
+    struct dirent *ep;     
+    dp = opendir (filename.c_str());
+
+    if (dp != NULL) {
+        while ((ep = readdir (dp))) {
+            string name = ep -> d_name;
+            if (name.length() > 2) {
+                files.insert(name);
+                i++;
+            }
+        }
+        (void) closedir (dp);
+    }
+    else {
+        perror ("Couldn't open the directory");
+    }
+    
+    printf("There's %d files in the current directory.\n", i);
+    return files;
+}
 
 
 // Creates folders using <sys/stat.h>
@@ -105,33 +138,15 @@ set<string> categorize(cv::Mat depthMat, cv::Mat cameraIntrinsic, cv::Mat tcwMat
 
 
 //Write frames to folders given set of reconstruction blocks
-void write_to_folders(set<string> blocks, cv::Mat RGBMat, cv::Mat depthMat, cv::Mat tcwMat, int frame) {
+void write_to_folders(set<string> blocks, ark::RGBDFrame frame) {
 
     for (string block : blocks) {
 
         string pathAssign = folderPath + "/frames_categorized/" + block + "/";
-        string rgbPathAssign = pathAssign + "RGB/";
-        string depthPathAssign = pathAssign + "depth/";
-        string tcwPathAssign = pathAssign + "tcw/";
 
-        createFolder(pathAssign);
-        createFolder(rgbPathAssign);
-        createFolder(depthPathAssign);
-        createFolder(tcwPathAssign);
+        ark::SaveFrame *saveFrame = new ark::SaveFrame(pathAssign);
 
-
-
-        cv::imwrite(rgbPathAssign + std::to_string(frame) + ".png", RGBMat);
-
-        cv::Mat depth255;
-        depthMat.convertTo(depth255, CV_16UC1, 1000);
-
-        cv::imwrite(depthPathAssign + std::to_string(frame) + ".png", depth255);
-
-        cv::FileStorage fs(tcwPathAssign + std::to_string(frame)+".xml",cv::FileStorage::WRITE);
-        fs << "tcw" << tcwMat;
-        fs.release();
-
+        saveFrame->frameWrite(frame);
 
     }
 }
@@ -177,93 +192,37 @@ int main(int argc, char **argv) {
     blockSize = voxSize * voxDim;
 
 
-
-
-
     float Karr[3][3] = {{fx_, 0, cx_}, {0, fy_, cy_}, {0, 0, 1}};
     cv::Mat K(3, 3, CV_32F, Karr);
 
     //Inverse camera intrinsic matrix
     K = K.inv();
 
-    int empty = 0;
-    int frame = 0;
-    cv::Mat RGBMat;
-    cv::Mat depthMat;
-    cv::Mat tcwMat;
+    ark::SaveFrame *saveFrame = new ark::SaveFrame(folderPath);
+
+    set<string> frames = getFiles(tcwPath);
+
+    set<int> tframes;
+    for (string frameC: frames) {
+        int tframe_ = atoi(frameC.substr(0, frameC.find(".")).c_str());
+        tframes.insert(tframe_);
+    }
 
 
     //Main loop, currently geared towards .png for RGB and Depth, .xml for tcw
 
-    while (true) {
+    for (int tframe: tframes) {
 
-        if (empty > 30) {
-            break;
-        }
-
-    	RGBMat = cv::imread(rgbPath + std::to_string(frame) + ".png", cv::IMREAD_COLOR);
-    	depthMat = cv::imread(depthPath + to_string(frame) + ".png", -1);
-    	depthMat.convertTo(depthMat, CV_32FC1);
-        depthMat *= 0.001;
+        ark::RGBDFrame frame = saveFrame->frameLoad(tframe);
 
 
-    	if (depthMat.rows == 0) {
-    		cout << "no image found at frame_id: " << frame << endl;
-    		empty++;
-    		frame++;
-    		continue;
-    	} 
+        //TCW is World to Camera Transform
+        //TCW is Camera to World Trasnform
+        cv::Mat Twc = frame.mTcw.inv();
 
+    	set<string> blocks = categorize(frame.imDepth, K, Twc);
 
-    	cout << "calculating frame: " << frame << endl;
-
-
-        //Obtain tcw from .xml
-        
-    	cv::FileStorage fs2(tcwPath + to_string(frame) + ".xml", cv::FileStorage::READ);
-    	fs2["tcw"] >> tcwMat;
-
-
-        if (tcwMat.rows == 0) {
-            cout << "no tcw found at frame_id: " << frame << endl;
-            empty++;
-            frame++;
-            continue;
-        }
-
-
-        empty = 0;
-
-
-        //Obtain tcw from .txt
-
-        /*
-        float tcwArr[4][4];
-        std::ifstream tcwFile;
-        tcwFile.open(tcwPath + std::to_string(frame) + ".txt");
-        for (int i = 0; i < 4; ++i) {
-            for (int k = 0; k < 4; ++k) {
-                tcwFile >> tcwArr[i][k];
-            }
-        }
-        cv::Mat tcw(4, 4, CV_32FC1, tcwArr);    
-        cout << tcw << endl;
-        */
-
-
-
-
-        //For whatever reason I have to invert this tcw to use it like a tcw??
-        tcwMat = tcwMat.inv();
-
-    	set<string> blocks = categorize(depthMat, K, tcwMat);
-
-        tcwMat = tcwMat.inv();
-
-        write_to_folders(blocks, RGBMat, depthMat, tcwMat, frame);
-    	
-    	frame++;
-
+        write_to_folders(blocks, frame);
     }
     
 
